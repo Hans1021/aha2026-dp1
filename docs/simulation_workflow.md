@@ -22,7 +22,7 @@ checked before and after simulation.
 The notebook has two explicit modes:
 
 - **`replay` (default):** load the recorded Codex-generated response in
-  `ai_logs/bao/bootstrap/response.json`, materialize its source, and run it against
+  `ai_logs/tb/bootstrap/response.json`, materialize its source, and run it against
   the real recovered DUT. This needs no API key and is not a simulated API call.
   The rendered prompt must match the recorded request; source/prompt edits require
   a fresh generation rather than silently reusing stale output.
@@ -61,7 +61,7 @@ fail, invalid JSON, repair attempts, and any retry without `temperature` remain 
 the same transcript:
 
 ```text
-ai_logs/bao/
+ai_logs/tb/
 ├── bootstrap/
 │   ├── initial_request.json
 │   ├── initial_response.json
@@ -69,6 +69,13 @@ ai_logs/bao/
 │   └── response.json
 └── runs/<run-id>/events.jsonl
 ```
+
+The notebook constructs `AILogger(ROOT, source_dir=ROOT / "tb")`. The logger uses
+the source directory's name for its subfolder: `tb/` writes to `ai_logs/tb/`, and
+`scripts/` would write to `ai_logs/scripts/`. Source directories must exist inside
+the checkout. Repository-relative paths are also accepted, so routing does not
+depend on the kernel's working directory. Default replay artifacts are resolved
+under the same source folder's `bootstrap/` directory.
 
 Run IDs prevent overwriting earlier logs. Events record timestamps, source
 fingerprints, request settings, validation results, and simulation observations.
@@ -83,6 +90,10 @@ contained a proposed CS/mode mapping; real simulation corrected it. The revised
 request uses the validated mapping, and the original request/response are retained.
 Future notebook calls automatically capture their complete API messages and
 serialized response or error outputs through the logger.
+
+The earlier `ai_logs/bao/` directory was moved to `ai_logs/tb/`. Existing transcript
+bytes are preserved, including any historical paths recorded in those events.
+New runs and notebook outputs use the source-based location.
 
 Live validation gets at most three generation attempts. Each failed attempt feeds
 bounded compiler/simulator diagnostics and the previous candidate back to the

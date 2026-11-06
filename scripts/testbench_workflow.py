@@ -59,13 +59,19 @@ def build_prompt(root):
 # append each request and response independently so failed attempts remain visible.
 class AILogger:
     # allocate a unique run directory rather than replacing an earlier transcript.
-    def __init__(self, root, run_id=None):
+    def __init__(self, root, run_id=None, *, source_dir):
         self.root = Path(root).resolve()
+        source_dir = Path(source_dir).expanduser()
+        self.source_dir = (source_dir if source_dir.is_absolute() else self.root / source_dir).resolve()
+        # derive the log folder from an existing source directory in this checkout.
+        if not self.source_dir.is_relative_to(self.root) or not self.source_dir.is_dir():
+            raise ValueError("source_dir must be an existing directory inside the repository")
+        self.log_root = self.root / "ai_logs" / self.source_dir.name
         self.run_id = run_id or (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + "-" + uuid.uuid4().hex[:8])
         # reject path fragments supplied as run names.
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", self.run_id):
             raise ValueError("run_id must be a single directory name")
-        self.run_dir = self.root / "ai_logs/bao/runs" / self.run_id
+        self.run_dir = self.log_root / "runs" / self.run_id
         self.run_dir.mkdir(parents=True, exist_ok=False)
         self.events_path = self.run_dir / "events.jsonl"
         self._secrets = set()
@@ -262,7 +268,7 @@ def request_generation(prompt, logger, mode="replay", replay_path=None, model=No
     try:
         if mode != "replay" or not 0 < timeout_s <= 300:
             raise ValueError("Use replay/live and a timeout in (0, 300] seconds")
-        path = Path(replay_path) if replay_path else logger.root / "ai_logs/bao/bootstrap/response.json"
+        path = Path(replay_path) if replay_path else logger.log_root / "bootstrap/response.json"
         original_request = path.with_name("request.json")
         # refuse to replay a transcript against a changed prompt.
         if original_request.is_file():

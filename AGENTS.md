@@ -11,3 +11,5 @@
 # Simulation notebook
 
 Keep the workflow notebook at `tb/LLM_Aided_SPI_Testbench_Generation.ipynb`.
+Store AI logs under `ai_logs/<source-directory-name>/`; the `tb/` notebook uses
+`ai_logs/tb/`.

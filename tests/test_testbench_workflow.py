@@ -73,7 +73,11 @@ class GenerationTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        self.logger = workflow.AILogger(self.root, run_id="test-run")
+        self.source_dir = self.root / "tb"
+        self.source_dir.mkdir()
+        self.logger = workflow.AILogger(
+            self.root, run_id="test-run", source_dir=self.source_dir
+        )
 
     # read the append-only log after the operation being checked.
     def events(self):
@@ -391,8 +395,106 @@ class GenerationTests(unittest.TestCase):
         self.logger.log_event("validation", message="keep this event")
         original = (self.logger.run_dir / "events.jsonl").read_bytes()
         with self.assertRaises((FileExistsError, ValueError)):
-            workflow.AILogger(self.root, run_id="test-run")
+            workflow.AILogger(self.root, run_id="test-run", source_dir=self.source_dir)
         self.assertEqual((self.logger.run_dir / "events.jsonl").read_bytes(), original)
+
+
+# route each workflow's transcripts and replay inputs by its source directory.
+class LogRoutingTests(unittest.TestCase):
+    # isolate source folders and external paths from the repository.
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name) / "repo"
+        self.root.mkdir()
+        # give independent workflows distinct source folders.
+        for name in ("tb", "scripts"):
+            (self.root / name).mkdir()
+
+    # require a source directory rather than silently selecting a shared folder.
+    def test_source_directory_is_required(self):
+        with self.assertRaises(TypeError):
+            workflow.AILogger(self.root)
+        self.assertFalse((self.root / "ai_logs").exists())
+
+    # accept repository-relative and absolute paths regardless of the process CWD.
+    def test_log_directory_follows_source_from_each_working_directory(self):
+        previous = Path.cwd()
+        try:
+            # exercise callers launched at either the checkout or notebook directory.
+            for cwd in (self.root, self.root / "tb"):
+                os.chdir(cwd)
+                # preserve the source folder name for each supported path form.
+                for name in ("tb", "scripts"):
+                    for source in (Path(name), self.root / name):
+                        with self.subTest(cwd=cwd, source=source):
+                            logger = workflow.AILogger(self.root, source_dir=source)
+                            expected = self.root / "ai_logs" / name
+                            self.assertEqual(logger.source_dir, self.root / name)
+                            self.assertEqual(logger.log_root, expected)
+                            self.assertEqual(logger.run_dir.parent, expected / "runs")
+                            logger.log_event("validation", message=name)
+                            self.assertTrue(logger.events_path.is_file())
+        finally:
+            os.chdir(previous)
+        self.assertFalse((self.root / "ai_logs/bao").exists())
+
+    # reject external folders, traversal, missing paths, files, and symlink escapes.
+    def test_invalid_source_directories_cannot_create_logs(self):
+        outside = self.root.parent / "outside"
+        outside.mkdir()
+        source_file = self.root / "source.py"
+        source_file.write_text("pass\n")
+        escaped = self.root / "escaped"
+        escaped.symlink_to(outside, target_is_directory=True)
+        invalid = (outside, Path("../outside"), Path("missing"), source_file, escaped)
+        # reject invalid locations before allocating any transcript directory.
+        for source in invalid:
+            with self.subTest(source=source), self.assertRaises(
+                (ValueError, FileNotFoundError, NotADirectoryError)
+            ):
+                workflow.AILogger(self.root, source_dir=source)
+        self.assertFalse((self.root / "ai_logs").exists())
+        self.assertFalse((outside / "ai_logs").exists())
+
+    # choose replay artifacts from the same folder that receives this workflow's logs.
+    def test_default_replay_is_scoped_to_source_directory(self):
+        client = mock.Mock()
+        client.generate.side_effect = AssertionError("replay called the model")
+        # distinguish source-specific replay results to expose cross-folder lookup.
+        for name in ("tb", "scripts"):
+            with self.subTest(source=name):
+                logger = workflow.AILogger(self.root, source_dir=name)
+                path = self.root / "ai_logs" / name / "bootstrap/response.json"
+                path.parent.mkdir(parents=True)
+                expected = {**artifact_fields(), "scheduling_explanation": f"fixture from {name}"}
+                path.write_text(json.dumps(expected))
+                actual = workflow.request_generation("replay prompt", logger, client=client)
+                self.assertEqual(actual, expected)
+                events = [json.loads(line) for line in logger.events_path.read_text().splitlines()]
+                output = next(event for event in events if event["kind"] == "output")
+                self.assertEqual(Path(output["replay_path"]), path)
+        client.generate.assert_not_called()
+        self.assertFalse((self.root / "ai_logs/bao").exists())
+
+    # a missing source transcript must not use another workflow or the old shared folder.
+    def test_missing_source_replay_does_not_use_other_folders(self):
+        logger = workflow.AILogger(self.root, source_dir="scripts")
+        # seed only unrelated locations to ensure both remain ineligible for replay.
+        for name in ("tb", "bao"):
+            path = self.root / "ai_logs" / name / "bootstrap/response.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(artifact_fields()))
+        with self.assertRaises(FileNotFoundError):
+            workflow.request_generation("replay prompt", logger)
+        events = [json.loads(line) for line in logger.events_path.read_text().splitlines()]
+        self.assertEqual([event["kind"] for event in events], ["prompt", "error"])
+
+    # retain migrated bootstrap and run history without leaving the old folder behind.
+    def test_repository_logs_have_moved_to_tb(self):
+        self.assertFalse((ROOT / "ai_logs/bao").exists())
+        self.assertTrue((ROOT / "ai_logs/tb/bootstrap/response.json").is_file())
+        self.assertTrue(any((ROOT / "ai_logs/tb/runs").glob("*/events.jsonl")))
 
 
 # exercise real SDK transport wiring without making network requests.
@@ -405,7 +507,9 @@ class SDKTransportTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.logger = workflow.AILogger(Path(self.temporary.name), run_id="sdk-transport")
+        root = Path(self.temporary.name)
+        (root / "tb").mkdir()
+        self.logger = workflow.AILogger(root, run_id="sdk-transport", source_dir="tb")
 
     # supply a real SDK over an entirely local HTTP transport.
     def client_for(self, handler, timeout_s):
@@ -518,7 +622,8 @@ class NotebookTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            logger = workflow.AILogger(directory)
+            (directory / "tb").mkdir()
+            logger = workflow.AILogger(directory, source_dir="tb")
             factory, completion = sdk_fixture(side_effect=[
                 model_response(json.dumps(artifact_fields())),
                 TimeoutError("second attempt has no response"),

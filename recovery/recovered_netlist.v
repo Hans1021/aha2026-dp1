@@ -1,7 +1,9 @@
-// Reading file 'recovery/recovered.asc'..
+/* recovered from recovery/recovered.asc. */
 
+/* expose the recovered routing interface. */
 module recovered (input io_9_31_1, input io_19_31_1, input io_17_31_0, input io_16_31_0, input io_13_31_1, input io_18_31_1, output io_8_31_1, output io_19_31_0, output io_16_31_1);
 
+/* declare recovered nets; retain routing and cell coordinates. */
 wire n1;
 // (0, 0, 'glb_netwk_1')
 // (5, 8, 'lutff_global/cen')
@@ -3389,6 +3391,7 @@ wire n41;
 // (2, 4, 'sp4_v_b_3')
 // (2, 5, 'neigh_op_bnl_1')
 
+/* preserve recovered register initialization. */
 reg n42 = 0;
 // (0, 3, 'neigh_op_tnr_2')
 // (0, 4, 'neigh_op_rgt_2')
@@ -30055,6 +30058,7 @@ wire n970;
 // (9, 19, 'neigh_op_bnl_0')
 
 wire io_8_31_1;
+/* connect the shared output net. */
 assign io_19_31_0 = io_8_31_1;
 // (7, 17, 'neigh_op_tnr_2')
 // (7, 18, 'neigh_op_rgt_2')
@@ -42769,7 +42773,7 @@ wire n2845;
 wire n2846;
 // (12, 5, 'lutff_4/lout')
 
-// RAM TILE 6 5
+/* RAM tile (6, 5): preserve configuration and wiring. */
 SB_RAM40_4K #(
   .READ_MODE(1),
   .WRITE_MODE(1),
@@ -42803,7 +42807,7 @@ SB_RAM40_4K #(
   .RCLK(io_9_31_1)
 );
 
-// RAM TILE 6 7
+/* RAM tile (6, 7): preserve configuration and wiring. */
 SB_RAM40_4K #(
   .READ_MODE(1),
   .WRITE_MODE(1),
@@ -42837,7 +42841,7 @@ SB_RAM40_4K #(
   .RCLK(io_9_31_1)
 );
 
-// RAM TILE 6 9
+/* RAM tile (6, 9): preserve configuration and wiring. */
 SB_RAM40_4K #(
   .READ_MODE(1),
   .WRITE_MODE(1),
@@ -42871,7 +42875,7 @@ SB_RAM40_4K #(
   .RCLK(io_9_31_1)
 );
 
-// RAM TILE 6 11
+/* RAM tile (6, 11): preserve configuration and wiring. */
 SB_RAM40_4K #(
   .READ_MODE(1),
   .WRITE_MODE(1),
@@ -42905,6 +42909,7 @@ SB_RAM40_4K #(
   .RCLK(io_9_31_1)
 );
 
+/* evaluate the recovered LUT network. */
 assign n2315 = /* LUT    7  9  0 */ 1'b0;
 assign n1443 = /* LUT    2  8  3 */ (n38 ? !n188 : 1'b0);
 assign n1444 = /* LUT    3  7  6 */ (n39 ? (n455 ? (n25 ? !n348 : 1'b0) : n25) : (n25 ? !n348 : 1'b0));
@@ -44309,6 +44314,7 @@ assign n2843 = /* LUT   14 30  4 */ !io_13_31_1;
 assign n2844 = /* LUT    3  3  0 */ (n20 ? (n165 ? 1'b0 : (n315 ? 1'b0 : !n305)) : !n315);
 assign n2845 = /* LUT    1  3  7 */ (n175 ? 1'b0 : n40);
 assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b1 : !n685)));
+/* connect LUT outputs to bypass nets or clocked registers. */
 /* FF  2  8  3 */ assign n217 = n1443;
 /* FF  3  7  6 */ assign n320 = n1444;
 /* FF 11 10  7 */ assign n1279 = n1445;
@@ -44319,7 +44325,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  2  4  5 */ assign n180 = n1450;
 /* FF 11  2  2 */ assign n1222 = n1451;
 /* FF  8 15  5 */ assign n949 = n1452;
-/* FF  5  9  0 */ always @(posedge io_9_31_1) if (n1) n607 <= n2 ? 1'b0 : n1453;
+/* FF (5, 9, 0): clock n607 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n607 <= n2 ? 1'b0 : n1453;
 /* FF  5  8  4 */ assign n602 = n1454;
 /* FF  4  4  3 */ assign n447 = n1455;
 /* FF 11  3  3 */ assign n1229 = n1456;
@@ -44331,11 +44340,17 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  5  5  7 */ assign n164 = n1462;
 /* FF  9 16  2 */ assign n1083 = n1463;
 /* FF  4  1  6 */ assign n429 = n1464;
-/* FF  8  4  3 */ always @(posedge io_9_31_1) if (n3) n586 <= n2 ? 1'b0 : n1465;
+/* FF (8, 4, 3): clock n586 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n586 <= n2 ? 1'b0 : n1465;
 /* FF  3 14  0 */ assign n392 = n1466;
 /* FF  1  6  3 */ assign n58 = n1467;
 /* FF 10 12  4 */ assign n1177 = n1468;
-/* FF  9  8  3 */ always @(posedge io_9_31_1) if (n1) n1024 <= n2 ? 1'b0 : n1469;
+/* FF (9, 8, 3): clock n1024 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1024 <= n2 ? 1'b0 : n1469;
 /* FF  2 18  1 */ assign n295 = n1470;
 /* FF 11 17  0 */ assign n1325 = n1471;
 /* FF 10  5  1 */ assign n1016 = n1472;
@@ -44381,9 +44396,15 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  3 13  7 */ assign n125 = n1512;
 /* FF 10 12  7 */ assign n1180 = n1513;
 /* FF 10  4  3 */ assign n895 = n1514;
-/* FF  9  8  6 */ always @(posedge io_9_31_1) if (n1) n998 <= n2 ? 1'b0 : n1515;
+/* FF (9, 8, 6): clock n998 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n998 <= n2 ? 1'b0 : n1515;
 /* FF  2 18  4 */ assign n297 = n1516;
-/* FF 11 17  3 */ always @(posedge io_9_31_1) if (n3) n1042 <= n2 ? 1'b0 : n1517;
+/* FF (11, 17, 3): clock n1042 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n1042 <= n2 ? 1'b0 : n1517;
 /* FF  3  6  4 */ assign n340 = n1518;
 /* FF  4 18  2 */ assign n537 = n1519;
 /* FF  2 10  5 */ assign n229 = n1520;
@@ -44414,14 +44435,20 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 10  7  4 */ assign n1141 = n1545;
 /* FF  3 17  3 */ assign n419 = n1546;
 /* FF  1  1  2 */ assign n8 = n1547;
-/* FF  9 11  6 */ always @(posedge io_9_31_1) if (n3) n1025 <= n2 ? 1'b0 : n1548;
+/* FF (9, 11, 6): clock n1025 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n1025 <= n2 ? 1'b0 : n1548;
 /* FF  9  3  2 */ assign n990 = n1549;
 /* FF 12 11  3 */ assign n1397 = n1550;
 /* FF  2 13  6 */ assign n248 = n1551;
 /* FF  3  1  0 */ assign n301 = n1552;
 /* FF  3  4  5 */ assign n327 = n1553;
 /* FF 12  3  4 */ assign n1355 = n1554;
-/* FF  5 13  2 */ always @(posedge io_9_31_1) if (n3) n642 <= n2 ? 1'b0 : n1555;
+/* FF (5, 13, 2): clock n642 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n642 <= n2 ? 1'b0 : n1555;
 /* FF  4 17  5 */ assign n532 = n1556;
 /* FF  3  5  6 */ assign n334 = n1557;
 /* FF 11  7  5 */ assign n1260 = n1558;
@@ -44447,7 +44474,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  9  6  3 */ assign n1019 = n1578;
 /* FF  2 16  1 */ assign n278 = n1579;
 /* FF  1 12  6 */ assign n107 = n1580;
-/* FF  1  4  2 */ always @(posedge io_9_31_1) if (n3) n42 <= n2 ? 1'b0 : n1581;
+/* FF (1, 4, 2): clock n42 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n42 <= n2 ? 1'b0 : n1581;
 /* FF 12 14  3 */ assign n1410 = n1582;
 /* FF  2 17  2 */ assign n287 = n1583;
 /* FF 10  6  6 */ assign n759 = n1584;
@@ -44466,7 +44496,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  3  1  3 */ assign n303 = n1597;
 /* FF  4 16  7 */ assign n527 = n1598;
 /* FF 11 11  6 */ assign n1285 = n1599;
-/* FF 11  3  2 */ always @(posedge io_9_31_1) if (n3) n887 <= n2 ? 1'b0 : n1600;
+/* FF (11, 3, 2): clock n887 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n887 <= n2 ? 1'b0 : n1600;
 /* FF  5 10  0 */ assign n615 = n1601;
 /* FF 12  3  7 */ assign n1357 = n1602;
 /* FF  5 13  5 */ assign n645 = n1603;
@@ -44499,13 +44532,19 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  8 19  0 */ assign n1 = n1630;
 /* FF  3  3  2 */ assign n314 = n1631;
 /* FF 12  5  6 */ assign n1364 = n1632;
-/* FF  2  8  5 */ always @(posedge io_9_31_1) if (n3) n219 <= n2 ? 1'b0 : n1633;
+/* FF (2, 8, 5): clock n219 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n219 <= n2 ? 1'b0 : n1633;
 /* FF 12  6  7 */ assign n1376 = n1634;
 /* FF  4 12  4 */ assign n493 = n1635;
 /* FF  2  4  7 */ assign n182 = n1636;
 /* FF 11  2  4 */ assign n1223 = n1637;
 /* FF  8 15  7 */ assign n950 = n1638;
-/* FF  8  7  3 */ always @(posedge io_9_31_1) if (n1) n898 <= n2 ? 1'b0 : n1639;
+/* FF (8, 7, 3): clock n898 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n898 <= n2 ? 1'b0 : n1639;
 /* FF  5  8  6 */ assign n604 = n1640;
 /* FF  4  4  5 */ assign n448 = n1641;
 /* FF  7 11  4 */ assign n725 = n1642;
@@ -44542,7 +44581,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  4  8  1 */ assign n468 = n1673;
 /* FF  8  3  0 */ assign n861 = n1674;
 /* FF  7 15  5 */ assign n831 = n1675;
-/* FF  7  7  1 */ always @(posedge io_9_31_1) if (n1) n776 <= n2 ? 1'b0 : n1676;
+/* FF (7, 7, 1): clock n776 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n776 <= n2 ? 1'b0 : n1676;
 /* FF  4  3  7 */ assign n174 = n1677;
 /* FF  8  7  6 */ assign n899 = n1678;
 /* FF  7 11  7 */ assign n639 = n1679;
@@ -44573,7 +44615,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  2  3  4 */ assign n169 = n1704;
 /* FF  4 14  6 */ assign n506 = n1705;
 /* FF  8  6  0 */ assign n889 = n1706;
-/* FF  8  9  5 */ always @(posedge io_9_31_1) if (n1) n907 <= n2 ? 1'b0 : n1707;
+/* FF (8, 9, 5): clock n907 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n907 <= n2 ? 1'b0 : n1707;
 /* FF 10 18  2 */ assign n1214 = n1708;
 /* FF  5  2  4 */ assign n551 = n1709;
 /* FF  9 14  1 */ assign n1066 = n1710;
@@ -44614,7 +44659,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 10 15  0 */ assign n969 = n1745;
 /* FF  1 15  5 */ assign n133 = n1746;
 /* FF 10 18  5 */ assign n1215 = n1747;
-/* FF  5  2  7 */ always @(posedge io_9_31_1) if (n3) n554 <= n2 ? 1'b0 : n1748;
+/* FF (5, 2, 7): clock n554 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n554 <= n2 ? 1'b0 : n1748;
 /* FF  9 14  4 */ assign n1069 = n1749;
 /* FF  1  8  2 */ assign n74 = n1750;
 /* FF  3 11  0 */ assign n119 = n1751;
@@ -44626,7 +44674,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  3 12  1 */ assign n378 = n1757;
 /* FF  1  4  4 */ assign n43 = n1758;
 /* FF 12 14  5 */ assign n1420 = n1759;
-/* FF  2 17  4 */ always @(posedge io_9_31_1) if (n3) n152 <= n2 ? 1'b0 : n1760;
+/* FF (2, 17, 4): clock n152 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n152 <= n2 ? 1'b0 : n1760;
 /* FF  9  2  7 */ assign n986 = n1761;
 /* FF 11 15  1 */ assign n1309 = n1762;
 /* FF 10  3  2 */ assign n871 = n1763;
@@ -44653,7 +44704,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  7  6  2 */ assign n771 = n1784;
 /* FF 10 13  1 */ assign n1184 = n1785;
 /* FF  9 17  4 */ assign n1092 = n1786;
-/* FF  9  9  0 */ always @(posedge io_9_31_1) if (n1) n1038 <= n2 ? 1'b0 : n1787;
+/* FF (9, 9, 0): clock n1038 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1038 <= n2 ? 1'b0 : n1787;
 /* FF  7  9  7 */ assign n791 = n1788;
 /* FF  3 18  7 */ assign n425 = n1789;
 /* FF 10  5  2 */ assign n1130 = n1790;
@@ -44682,8 +44736,14 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  7 11  6 */ assign n802 = n1813;
 /* FF 10 16  1 */ assign n1200 = n1814;
 /* FF  5  1  5 */ assign n546 = n1815;
-/* FF  9 12  0 */ always @(posedge io_9_31_1) if (n3) n1023 <= n2 ? 1'b0 : n1816;
-/* FF  7 12  7 */ always @(posedge io_9_31_1) if (n681) n588 <= n2 ? 1'b0 : n1817;
+/* FF (9, 12, 0): clock n1023 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n1023 <= n2 ? 1'b0 : n1816;
+/* FF (7, 12, 7): clock n588 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n681; n2 synchronously selects zero. */
+  if (n681) n588 <= n2 ? 1'b0 : n1817;
 /* FF  8  8  5 */ assign n716 = n1818;
 /* FF  7  4  3 */ assign n753 = n1819;
 /* FF  1 10  5 */ assign n91 = n1820;
@@ -44697,7 +44757,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  9  8  7 */ assign n685 = n1828;
 /* FF  1  3  1 */ assign n28 = n1829;
 /* FF  2 18  5 */ assign n298 = n1830;
-/* FF 11 17  4 */ always @(posedge io_9_31_1) if (n3) n909 <= n2 ? 1'b0 : n1831;
+/* FF (11, 17, 4): clock n909 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n909 <= n2 ? 1'b0 : n1831;
 /* FF 11  9  0 */ assign n1270 = n1832;
 /* FF 12 13  2 */ assign n1412 = n1833;
 /* FF  3  6  5 */ assign n341 = n1834;
@@ -44722,7 +44785,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  8  3  2 */ assign n863 = n1853;
 /* FF  1 13  0 */ assign n102 = n1854;
 /* FF  7  7  3 */ assign n778 = n1855;
-/* FF  7  8  4 */ always @(posedge io_9_31_1) if (n1) n587 <= n2 ? 1'b0 : n1856;
+/* FF (7, 8, 4): clock n587 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n587 <= n2 ? 1'b0 : n1856;
 /* FF  3 17  4 */ assign n408 = n1857;
 /* FF  3  9  0 */ assign n359 = n1858;
 /* FF  1  9  7 */ assign n85 = n1859;
@@ -44779,7 +44845,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  5 17  4 */ assign n671 = n1910;
 /* FF  4 13  3 */ assign n502 = n1911;
 /* FF 11 12  3 */ assign n1290 = n1912;
-/* FF  2  5  6 */ always @(posedge io_9_31_1) if (n3) n189 <= n2 ? 1'b0 : n1913;
+/* FF (2, 5, 6): clock n189 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n189 <= n2 ? 1'b0 : n1913;
 /* FF  3  1  4 */ assign n304 = n1914;
 /* FF 11 11  7 */ assign n1286 = n1915;
 /* FF  5 10  1 */ assign n616 = n1916;
@@ -44828,14 +44897,20 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  7 12  6 */ assign n805 = n1959;
 /* FF 10 17  1 */ assign n1207 = n1960;
 /* FF  9 13  0 */ assign n834 = n1961;
-/* FF  7  5  3 */ always @(posedge io_9_31_1) if (n1) n577 <= n2 ? 1'b0 : n1962;
+/* FF (7, 5, 3): clock n577 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n577 <= n2 ? 1'b0 : n1962;
 /* FF  8  1  1 */ assign n848 = n1963;
 /* FF  9 16  5 */ assign n1085 = n1964;
 /* FF  8  4  6 */ assign n873 = n1965;
 /* FF 10 13  3 */ assign n952 = n1966;
 /* FF  9 17  6 */ assign n1093 = n1967;
 /* FF  1  6  6 */ assign n61 = n1968;
-/* FF  9  9  2 */ always @(posedge io_9_31_1) if (n1) n1039 <= n2 ? 1'b0 : n1969;
+/* FF (9, 9, 2): clock n1039 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1039 <= n2 ? 1'b0 : n1969;
 /* FF  1  3  0 */ assign n27 = n1970;
 /* FF 12 13  1 */ assign n1411 = n1971;
 /* FF 10  5  4 */ assign n1106 = n1972;
@@ -44888,7 +44963,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 12  5  0 */ assign n1366 = n2019;
 /* FF  3  6  7 */ assign n343 = n2020;
 /* FF 10  5  7 */ assign n1132 = n2021;
-/* FF  2 11  4 */ always @(posedge io_9_31_1) if (n3) n109 <= n2 ? 1'b0 : n2022;
+/* FF (2, 11, 4): clock n109 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n109 <= n2 ? 1'b0 : n2022;
 /* FF  4 18  5 */ assign n538 = n2023;
 /* FF  8 14  0 */ assign n833 = n2024;
 /* FF  5 15  3 */ assign n658 = n2025;
@@ -44897,7 +44975,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  2  3  5 */ assign n170 = n2028;
 /* FF  4 14  7 */ assign n276 = n2029;
 /* FF  5  8  0 */ assign n598 = n2030;
-/* FF  7 19  2 */ always @(posedge io_9_31_1) if (n3) n846 <= n2 ? 1'b0 : n2031;
+/* FF (7, 19, 2): clock n846 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n846 <= n2 ? 1'b0 : n2031;
 /* FF  5 11  5 */ assign n629 = n2032;
 /* FF  4  7  4 */ assign n462 = n2033;
 /* FF  1 17  0 */ assign n143 = n2034;
@@ -44960,7 +45041,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 12  7  3 */ assign n1351 = n2091;
 /* FF  8 16  3 */ assign n957 = n2092;
 /* FF  5 17  6 */ assign n668 = n2093;
-/* FF  5  9  2 */ always @(posedge io_9_31_1) if (n1) n609 <= n2 ? 1'b0 : n2094;
+/* FF (5, 9, 2): clock n609 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n609 <= n2 ? 1'b0 : n2094;
 /* FF  4 13  5 */ assign n504 = n2095;
 /* FF  4  5  1 */ assign n21 = n2096;
 /* FF 11  4  1 */ assign n1236 = n2097;
@@ -44970,13 +45054,19 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  4  9  7 */ assign n475 = n2101;
 /* FF  4  6  1 */ assign n36 = n2102;
 /* FF  7 14  2 */ assign n818 = n2103;
-/* FF  7 13  6 */ always @(posedge io_9_31_1) if (n1) n814 <= n2 ? 1'b0 : n2104;
+/* FF (7, 13, 6): clock n814 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n814 <= n2 ? 1'b0 : n2104;
 /* FF  8  4  5 */ assign n876 = n2105;
 /* FF  7  6  3 */ assign n772 = n2106;
 /* FF 10 13  2 */ assign n1186 = n2107;
 /* FF  9 17  5 */ assign n824 = n2108;
 /* FF  9  9  1 */ assign n686 = n2109;
-/* FF  8  5  6 */ always @(posedge io_9_31_1) if (n3) n457 <= n2 ? 1'b0 : n2110;
+/* FF (8, 5, 6): clock n457 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n457 <= n2 ? 1'b0 : n2110;
 /* FF 10 14  3 */ assign n1182 = n2111;
 /* FF  7  2  5 */ assign n740 = n2112;
 /* FF  3 15  2 */ assign n402 = n2113;
@@ -45009,7 +45099,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  7  4  4 */ assign n754 = n2140;
 /* FF 10 17  3 */ assign n1209 = n2141;
 /* FF  9 13  2 */ assign n1057 = n2142;
-/* FF  7  5  5 */ always @(posedge io_9_31_1) if (n1) n579 <= n2 ? 1'b0 : n2143;
+/* FF (7, 5, 5): clock n579 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n579 <= n2 ? 1'b0 : n2143;
 /* FF  8  1  3 */ assign n849 = n2144;
 /* FF  9 16  7 */ assign n1087 = n2145;
 /* FF  1 11  1 */ assign n96 = n2146;
@@ -45035,10 +45128,19 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  8 15  0 */ assign n944 = n2166;
 /* FF  7 19  1 */ assign n3 = n2167;
 /* FF 12  1  6 */ assign n1342 = n2168;
-/* FF  5 11  4 */ always @(posedge io_9_31_1) if (n1) n628 <= n2 ? 1'b0 : n2169;
+/* FF (5, 11, 4): clock n628 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n628 <= n2 ? 1'b0 : n2169;
 /* FF  4 15  7 */ assign n518 = n2170;
-/* FF  4  7  3 */ always @(posedge io_9_31_1) if (n3) n461 <= n2 ? 1'b0 : n2171;
-/* FF  8 11  2 */ always @(posedge io_9_31_1) if (n1) n915 <= n2 ? 1'b0 : n2172;
+/* FF (4, 7, 3): clock n461 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n461 <= n2 ? 1'b0 : n2171;
+/* FF (8, 11, 2): clock n915 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n915 <= n2 ? 1'b0 : n2172;
 /* FF  5 12  5 */ assign n636 = n2173;
 /* FF  5  4  1 */ assign n563 = n2174;
 /* FF  4  8  4 */ assign n471 = n2175;
@@ -45073,12 +45175,18 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  2  3  7 */ assign n172 = n2204;
 /* FF  5  8  2 */ assign n600 = n2205;
 /* FF  4  4  1 */ assign n445 = n2206;
-/* FF  7 11  0 */ always @(posedge io_9_31_1) if (n1) n798 <= n2 ? 1'b0 : n2207;
+/* FF (7, 11, 0): clock n798 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n798 <= n2 ? 1'b0 : n2207;
 /* FF  5 11  7 */ assign n630 = n2208;
 /* FF  4  7  6 */ assign n464 = n2209;
 /* FF  1 17  2 */ assign n145 = n2210;
 /* FF  8  2  5 */ assign n858 = n2211;
-/* FF  7  3  1 */ always @(posedge io_9_31_1) if (n3) n576 <= n2 ? 1'b0 : n2212;
+/* FF (7, 3, 1): clock n576 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n576 <= n2 ? 1'b0 : n2212;
 /* FF 10 11  2 */ assign n1167 = n2213;
 /* FF  9 15  5 */ assign n1078 = n2214;
 /* FF  8  3  6 */ assign n867 = n2215;
@@ -45119,7 +45227,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  9 14  7 */ assign n1072 = n2250;
 /* FF  1  8  5 */ assign n77 = n2251;
 /* FF  9 11  1 */ assign n1045 = n2252;
-/* FF  7  3  4 */ always @(posedge io_9_31_1) if (n3) n745 <= n2 ? 1'b0 : n2253;
+/* FF (7, 3, 4): clock n745 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n745 <= n2 ? 1'b0 : n2253;
 /* FF  2 13  1 */ assign n251 = n2254;
 /* FF  2 16  6 */ assign n283 = n2255;
 /* FF  3 12  4 */ assign n381 = n2256;
@@ -45136,17 +45247,26 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 11  8  1 */ assign n1264 = n2267;
 /* FF  8 16  5 */ assign n843 = n2268;
 /* FF  2  1  3 */ assign n155 = n2269;
-/* FF  5  9  4 */ always @(posedge io_9_31_1) if (n1) n610 <= n2 ? 1'b0 : n2270;
+/* FF (5, 9, 4): clock n610 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n610 <= n2 ? 1'b0 : n2270;
 /* FF  4 13  7 */ assign n505 = n2271;
 /* FF  4  5  3 */ assign n453 = n2272;
 /* FF 11  3  7 */ assign n1232 = n2273;
-/* FF  5 10  5 */ always @(posedge io_9_31_1) if (n1) n619 <= n2 ? 1'b0 : n2274;
+/* FF (5, 10, 5): clock n619 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n619 <= n2 ? 1'b0 : n2274;
 /* FF  8  9  1 */ assign n792 = n2275;
 /* FF  5  2  0 */ assign n547 = n2276;
 /* FF  4  6  3 */ assign n455 = n2277;
 /* FF 10 17  2 */ assign n1208 = n2278;
 /* FF  9 13  1 */ assign n1056 = n2279;
-/* FF  7  5  4 */ always @(posedge io_9_31_1) if (n1) n578 <= n2 ? 1'b0 : n2280;
+/* FF (7, 5, 4): clock n578 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n578 <= n2 ? 1'b0 : n2280;
 /* FF  1 11  0 */ assign n95 = n2281;
 /* FF  8  4  7 */ assign n877 = n2282;
 /* FF  7  6  5 */ assign n774 = n2283;
@@ -45171,16 +45291,25 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  4 16  2 */ assign n523 = n2302;
 /* FF 11 11  1 */ assign n1281 = n2303;
 /* FF  3  4  3 */ assign n322 = n2304;
-/* FF  8 19  5 */ always @(posedge io_9_31_1) if (1'b1) n972 <= n2 ? 1'b0 : n2305;
+/* FF (8, 19, 5): clock n972 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* n2 synchronously selects zero. */
+  if (1'b1) n972 <= n2 ? 1'b0 : n2305;
 /* FF  3  3  7 */ assign n318 = n2306;
-/* FF  5 12  4 */ always @(posedge io_9_31_1) if (n3) n635 <= n2 ? 1'b0 : n2307;
+/* FF (5, 12, 4): clock n635 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n635 <= n2 ? 1'b0 : n2307;
 /* FF  4  8  3 */ assign n470 = n2308;
 /* FF 11  7  3 */ assign n1258 = n2309;
 /* FF  5  5  1 */ assign n570 = n2310;
 /* FF  7 16  3 */ assign n838 = n2311;
 /* FF  8 12  1 */ assign n920 = n2312;
 /* FF  1 14  1 */ assign n122 = n2313;
-/* FF  7 17  4 */ always @(posedge io_9_31_1) if (n681) n842 <= n680 ? 1'b0 : n2314;
+/* FF (7, 17, 4): clock n842 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n681; n680 synchronously selects zero. */
+  if (n681) n842 <= n680 ? 1'b0 : n2314;
 /* FF  7  9  0 */ assign n5 = n2315;
 /* FF  2  1  6 */ assign n156 = n2316;
 /* FF 10 16  4 */ assign n1202 = n2317;
@@ -45206,15 +45335,24 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  9  1  7 */ assign n978 = n2337;
 /* FF  2 11  5 */ assign n236 = n2338;
 /* FF  3  7  3 */ assign n347 = n2339;
-/* FF 11 10  4 */ always @(posedge io_9_31_1) if (n3) n1007 <= n2 ? 1'b0 : n2340;
+/* FF (11, 10, 4): clock n1007 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n1007 <= n2 ? 1'b0 : n2340;
 /* FF 12  6  2 */ assign n1372 = n2341;
 /* FF  2  4  2 */ assign n175 = n2342;
 /* FF  4 11  3 */ assign n487 = n2343;
-/* FF  8 15  2 */ always @(posedge io_9_31_1) if (n3) n946 <= n2 ? 1'b0 : n2344;
+/* FF (8, 15, 2): clock n946 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n946 <= n2 ? 1'b0 : n2344;
 /* FF  2  3  6 */ assign n171 = n2345;
 /* FF  5  8  1 */ assign n599 = n2346;
 /* FF  4  4  0 */ assign n444 = n2347;
-/* FF  5 11  6 */ always @(posedge io_9_31_1) if (n1) n390 <= n2 ? 1'b0 : n2348;
+/* FF (5, 11, 6): clock n390 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n390 <= n2 ? 1'b0 : n2348;
 /* FF  4  7  5 */ assign n463 = n2349;
 /* FF  8 11  4 */ assign n916 = n2350;
 /* FF  7 12  0 */ assign n807 = n2351;
@@ -45223,7 +45361,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  4  8  6 */ assign n473 = n2354;
 /* FF  8  3  5 */ assign n866 = n2355;
 /* FF  1 13  3 */ assign n114 = n2356;
-/* FF  7  7  6 */ always @(posedge io_9_31_1) if (n1) n781 <= n2 ? 1'b0 : n2357;
+/* FF (7, 7, 6): clock n781 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n781 <= n2 ? 1'b0 : n2357;
 /* FF  1 14  4 */ assign n123 = n2358;
 /* FF  1  6  0 */ assign n55 = n2359;
 /* FF 10 12  1 */ assign n1175 = n2360;
@@ -45256,7 +45397,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  8 14  4 */ assign n937 = n2387;
 /* FF 11  1  7 */ assign n1219 = n2388;
 /* FF  7 15  0 */ assign n827 = n2389;
-/* FF  5 15  7 */ always @(posedge io_9_31_1) if (n3) n662 <= n2 ? 1'b0 : n2390;
+/* FF (5, 15, 7): clock n662 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n662 <= n2 ? 1'b0 : n2390;
 /* FF  5  7  3 */ assign n592 = n2391;
 /* FF  4 11  6 */ assign n488 = n2392;
 /* FF  4  3  2 */ assign n441 = n2393;
@@ -45274,7 +45418,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  9 15  7 */ assign n1080 = n2405;
 /* FF  1 10  1 */ assign n88 = n2406;
 /* FF  1 13  6 */ assign n117 = n2407;
-/* FF  9  7  2 */ always @(posedge io_9_31_1) if (n1) n1015 <= n2 ? 1'b0 : n2408;
+/* FF (9, 7, 2): clock n1015 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1015 <= n2 ? 1'b0 : n2408;
 /* FF  2 17  6 */ assign n290 = n2409;
 /* FF  3 13  4 */ assign n141 = n2410;
 /* FF  3  5  0 */ assign n332 = n2411;
@@ -45291,8 +45438,14 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 11  4  2 */ assign n1237 = n2422;
 /* FF  3  1  7 */ assign n305 = n2423;
 /* FF  4 14  1 */ assign n508 = n2424;
-/* FF  7 18  1 */ always @(posedge io_9_31_1) if (n3) n844 <= n845 ? 1'b0 : n2425;
-/* FF  5 10  4 */ always @(posedge io_9_31_1) if (n1) n384 <= n2 ? 1'b0 : n2426;
+/* FF (7, 18, 1): clock n844 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n845 synchronously selects zero. */
+  if (n3) n844 <= n845 ? 1'b0 : n2425;
+/* FF (5, 10, 4): clock n384 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n384 <= n2 ? 1'b0 : n2426;
 /* FF  8 17  4 */ assign n966 = n2427;
 /* FF  8  9  0 */ assign n905 = n2428;
 /* FF  4  6  2 */ assign n24 = n2429;
@@ -45325,7 +45478,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 11  7  2 */ assign n1036 = n2456;
 /* FF 10  3  7 */ assign n1121 = n2457;
 /* FF  5 14  0 */ assign n648 = n2458;
-/* FF 11  8  3 */ always @(posedge io_9_31_1) if (n3) n901 <= n2 ? 1'b0 : n2459;
+/* FF (11, 8, 3): clock n901 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n901 <= n2 ? 1'b0 : n2459;
 /* FF  8 12  0 */ assign n919 = n2460;
 /* FF  8 16  7 */ assign n959 = n2461;
 /* FF  8 13  1 */ assign n925 = n2462;
@@ -45344,7 +45500,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  1 11  2 */ assign n97 = n2475;
 /* FF 10 10  1 */ assign n1159 = n2476;
 /* FF  9  6  0 */ assign n1017 = n2477;
-/* FF  7  6  7 */ always @(posedge io_9_31_1) if (n1) n698 <= n2 ? 1'b0 : n2478;
+/* FF (7, 6, 7): clock n698 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n698 <= n2 ? 1'b0 : n2478;
 /* FF 10 13  6 */ assign n1188 = n2479;
 /* FF  9  9  5 */ assign n687 = n2480;
 /* FF 12 14  0 */ assign n1418 = n2481;
@@ -45358,7 +45517,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  2 12  5 */ assign n244 = n2489;
 /* FF  3  8  3 */ assign n356 = n2490;
 /* FF  2  4  1 */ assign n177 = n2491;
-/* FF  5 17  0 */ always @(posedge io_9_31_1) if (n3) n663 <= n2 ? 1'b0 : n2492;
+/* FF (5, 17, 0): clock n663 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n663 <= n2 ? 1'b0 : n2492;
 /* FF 12  2  3 */ assign n1347 = n2493;
 /* FF  2  5  2 */ assign n185 = n2494;
 /* FF  4 16  4 */ assign n525 = n2495;
@@ -45366,9 +45528,15 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  5 12  6 */ assign n637 = n2497;
 /* FF  5  4  2 */ assign n564 = n2498;
 /* FF  4  8  5 */ assign n472 = n2499;
-/* FF  7 13  0 */ always @(posedge io_9_31_1) if (n1) n810 <= n2 ? 1'b0 : n2500;
+/* FF (7, 13, 0): clock n810 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n810 <= n2 ? 1'b0 : n2500;
 /* FF  5  5  3 */ assign n572 = n2501;
-/* FF  7 16  5 */ always @(posedge io_9_31_1) if (n681) n840 <= n2 ? 1'b0 : n2502;
+/* FF (7, 16, 5): clock n840 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n681; n2 synchronously selects zero. */
+  if (n681) n840 <= n2 ? 1'b0 : n2502;
 /* FF  8 12  3 */ assign n826 = n2503;
 /* FF  7  9  2 */ assign n621 = n2504;
 /* FF  7  8  6 */ assign n614 = n2505;
@@ -45388,20 +45556,32 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 11  6  0 */ assign n1249 = n2519;
 /* FF 12 13  7 */ assign n1416 = n2520;
 /* FF 12  5  3 */ assign n1368 = n2521;
-/* FF  2  8  2 */ always @(posedge io_9_31_1) if (n3) n216 <= n2 ? 1'b0 : n2522;
+/* FF (2, 8, 2): clock n216 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n216 <= n2 ? 1'b0 : n2522;
 /* FF  2 11  7 */ assign n238 = n2523;
 /* FF  3  7  5 */ assign n349 = n2524;
-/* FF 11 10  6 */ always @(posedge io_9_31_1) if (n3) n1037 <= n2 ? 1'b0 : n2525;
+/* FF (11, 10, 6): clock n1037 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n1037 <= n2 ? 1'b0 : n2525;
 /* FF  5 15  6 */ assign n661 = n2526;
 /* FF  4 11  5 */ assign n258 = n2527;
 /* FF 11  2  1 */ assign n1221 = n2528;
 /* FF  8 15  4 */ assign n948 = n2529;
 /* FF  8  7  0 */ assign n783 = n2530;
-/* FF  5  8  3 */ always @(posedge io_9_31_1) if (n1) n601 <= n2 ? 1'b0 : n2531;
+/* FF (5, 8, 3): clock n601 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n601 <= n2 ? 1'b0 : n2531;
 /* FF  4  4  2 */ assign n446 = n2532;
 /* FF  7 11  1 */ assign n726 = n2533;
 /* FF  4  7  7 */ assign n465 = n2534;
-/* FF  8 11  6 */ always @(posedge io_9_31_1) if (n1) n917 <= n2 ? 1'b0 : n2535;
+/* FF (8, 11, 6): clock n917 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n917 <= n2 ? 1'b0 : n2535;
 /* FF  1 17  3 */ assign n146 = n2536;
 /* FF  5  1  0 */ assign n541 = n2537;
 /* FF  7 12  2 */ assign n808 = n2538;
@@ -45433,7 +45613,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 12  4  5 */ assign n1361 = n2564;
 /* FF  2  7  4 */ assign n208 = n2565;
 /* FF 11  6  3 */ assign n1252 = n2566;
-/* FF  8 10  0 */ always @(posedge io_9_31_1) if (n1) n910 <= n2 ? 1'b0 : n2567;
+/* FF (8, 10, 0): clock n910 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n910 <= n2 ? 1'b0 : n2567;
 /* FF  5  6  4 */ assign n583 = n2568;
 /* FF  4 10  7 */ assign n484 = n2569;
 /* FF  4  2  3 */ assign n434 = n2570;
@@ -45442,7 +45625,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  5  7  5 */ assign n594 = n2573;
 /* FF  4  3  4 */ assign n330 = n2574;
 /* FF  8  6  7 */ assign n894 = n2575;
-/* FF  1 16  5 */ always @(posedge io_9_31_1) if (n3) n138 <= n2 ? 1'b0 : n2576;
+/* FF (1, 16, 5): clock n138 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n138 <= n2 ? 1'b0 : n2576;
 /* FF 10 15  4 */ assign n1196 = n2577;
 /* FF 10  7  0 */ assign n1137 = n2578;
 /* FF  1 17  6 */ assign n148 = n2579;
@@ -45450,7 +45636,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  9 11  2 */ assign n1046 = n2581;
 /* FF  7  3  5 */ assign n746 = n2582;
 /* FF 10 11  6 */ assign n1171 = n2583;
-/* FF 10  8  0 */ always @(posedge io_9_31_1) if (n3) n351 <= n2 ? 1'b0 : n2584;
+/* FF (10, 8, 0): clock n351 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n351 <= n2 ? 1'b0 : n2584;
 /* FF  9  7  4 */ assign n1010 = n2585;
 /* FF  4 17  1 */ assign n528 = n2586;
 /* FF 11 16  1 */ assign n1318 = n2587;
@@ -45485,7 +45674,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 10  7  3 */ assign n1140 = n2616;
 /* FF  3  8  2 */ assign n355 = n2617;
 /* FF  9  3  1 */ assign n989 = n2618;
-/* FF  3 11  7 */ always @(posedge io_9_31_1) if (n3) n247 <= n2 ? 1'b0 : n2619;
+/* FF (3, 11, 7): clock n247 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n247 <= n2 ? 1'b0 : n2619;
 /* FF  2 13  5 */ assign n256 = n2620;
 /* FF  2  5  1 */ assign n184 = n2621;
 /* FF  4 16  3 */ assign n524 = n2622;
@@ -45538,7 +45730,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF 11  3  1 */ assign n1228 = n2669;
 /* FF  8 11  5 */ assign n803 = n2670;
 /* FF  7 12  1 */ assign n804 = n2671;
-/* FF  5  4  4 */ always @(posedge io_9_31_1) if (n3) n566 <= n2 ? 1'b0 : n2672;
+/* FF (5, 4, 4): clock n566 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n566 <= n2 ? 1'b0 : n2672;
 /* FF  4  8  7 */ assign n474 = n2673;
 /* FF  7 13  2 */ assign n811 = n2674;
 /* FF  5  5  5 */ assign n574 = n2675;
@@ -45570,12 +45765,24 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  5  7  4 */ assign n593 = n2701;
 /* FF  4 11  7 */ assign n489 = n2702;
 /* FF  4  3  3 */ assign n442 = n2703;
-/* FF 11  2  3 */ always @(posedge io_9_31_1) if (n3) n450 <= n2 ? 1'b0 : n2704;
-/* FF  8 15  6 */ always @(posedge io_9_31_1) if (n3) n913 <= n2 ? 1'b0 : n2705;
-/* FF  8  7  2 */ always @(posedge io_9_31_1) if (n1) n897 <= n2 ? 1'b0 : n2706;
+/* FF (11, 2, 3): clock n450 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n450 <= n2 ? 1'b0 : n2704;
+/* FF (8, 15, 6): clock n913 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n913 <= n2 ? 1'b0 : n2705;
+/* FF (8, 7, 2): clock n897 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n897 <= n2 ? 1'b0 : n2706;
 /* FF  5  8  5 */ assign n603 = n2707;
 /* FF  4  4  4 */ assign n191 = n2708;
-/* FF  7 11  3 */ always @(posedge io_9_31_1) if (n1) n800 <= n2 ? 1'b0 : n2709;
+/* FF (7, 11, 3): clock n800 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n800 <= n2 ? 1'b0 : n2709;
 /* FF  1 17  5 */ assign n147 = n2710;
 /* FF  1  9  1 */ assign n82 = n2711;
 /* FF  7 12  4 */ assign n806 = n2712;
@@ -45589,7 +45796,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  1  6  4 */ assign n59 = n2720;
 /* FF 10 12  5 */ assign n1178 = n2721;
 /* FF 10  4  1 */ assign n1125 = n2722;
-/* FF  9  8  4 */ always @(posedge io_9_31_1) if (n1) n1034 <= n2 ? 1'b0 : n2723;
+/* FF (9, 8, 4): clock n1034 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1034 <= n2 ? 1'b0 : n2723;
 /* FF  2 18  2 */ assign n296 = n2724;
 /* FF 11 17  1 */ assign n1326 = n2725;
 /* FF  3  6  2 */ assign n338 = n2726;
@@ -45650,7 +45860,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  8  9  4 */ assign n906 = n2781;
 /* FF  5  2  3 */ assign n550 = n2782;
 /* FF  9 14  0 */ assign n1065 = n2783;
-/* FF  4  6  6 */ always @(posedge io_9_31_1) if (n3) n212 <= n2 ? 1'b0 : n2784;
+/* FF (4, 6, 6): clock n212 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n3; n2 synchronously selects zero. */
+  if (n3) n212 <= n2 ? 1'b0 : n2784;
 /* FF  7 14  7 */ assign n823 = n2785;
 /* FF  8  2  1 */ assign n854 = n2786;
 /* FF  8  1  5 */ assign n851 = n2787;
@@ -45677,7 +45890,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  2  5  3 */ assign n186 = n2808;
 /* FF  4 16  5 */ assign n526 = n2809;
 /* FF 11 11  4 */ assign n1283 = n2810;
-/* FF 14 19  5 */ always @(posedge io_9_31_1) if (1'b1) io_16_31_1 <= 1'b0 ? 1'b0 : n2811;
+/* FF (14, 19, 5): clock io_16_31_1 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* update unconditionally; reset is disabled. */
+  if (1'b1) io_16_31_1 <= 1'b0 ? 1'b0 : n2811;
 /* FF 11  3  0 */ assign n1227 = n2812;
 /* FF  3  4  6 */ assign n328 = n2813;
 /* FF 12  3  5 */ assign n1356 = n2814;
@@ -45688,7 +45904,10 @@ assign n2846 = /* LUT   12  5  4 */ (n1361 ? !n687 : (n687 ? 1'b0 : (n1368 ? 1'b
 /* FF  5  5  4 */ assign n573 = n2819;
 /* FF  7 16  6 */ assign n841 = n2820;
 /* FF  4  1  3 */ assign n427 = n2821;
-/* FF  8 12  4 */ always @(posedge io_9_31_1) if (n1) n921 <= n2 ? 1'b0 : n2822;
+/* FF (8, 12, 4): clock n921 on io_9_31_1. */
+always @(posedge io_9_31_1)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n921 <= n2 ? 1'b0 : n2822;
 /* FF  8  4  0 */ assign n874 = n2823;
 /* FF  9 17  0 */ assign n1088 = n2824;
 /* FF  7 17  7 */ assign n680 = n2825;

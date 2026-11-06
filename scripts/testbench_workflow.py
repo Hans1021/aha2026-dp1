@@ -357,7 +357,7 @@ def write_artifacts(artifacts, output_dir):
 
 
 # discover installed tools without downloading or modifying the toolchain.
-def discover_tools():
+def discover_tools(require_cells=True):
     suite = Path(os.environ.get("OSS_CAD_SUITE", "~/.local/opt/oss-cad-suite")).expanduser().resolve()
     tools = {}
     # prefer the explicitly selected or locally installed suite.
@@ -369,11 +369,71 @@ def discover_tools():
             raise FileNotFoundError(f"Install OSS CAD Suite or set PATH for {name}")
         tools[name] = resolved
     cells = Path(os.environ.get("ICE40_CELLS_SIM", str(suite / "share/yosys/ice40/cells_sim.v"))).expanduser().resolve()
-    # require actual vendor models; never replace RAM behavior with a stub.
-    if not cells.is_file():
-        raise FileNotFoundError("Set ICE40_CELLS_SIM to Yosys share/yosys/ice40/cells_sim.v")
-    tools["cells"] = str(cells)
+    # require vendor models only when the recovered source instantiates primitives.
+    if require_cells:
+        if not cells.is_file():
+            raise FileNotFoundError("Set ICE40_CELLS_SIM to Yosys share/yosys/ice40/cells_sim.v")
+        tools["cells"] = str(cells)
     return tools
+
+
+# count vendor-cell instances without interpreting comments as circuitry.
+def primitive_inventory(root):
+    source = _code_only((Path(root) / "recovery/recovered_sim.v").read_text())
+    source = re.sub(r'"(?:\\.|[^"\\])*"', '""', source)
+    pattern = r"\b(SB_[A-Za-z0-9_]+)\s+(?=#\s*\(|(?:\\\S+|[A-Za-z_]\w*)\s*\()"
+    names = re.findall(pattern, source)
+    return {name: names.count(name) for name in sorted(set(names))}
+
+
+# resolve the maintained source list for checked-in or generated testbench files.
+def recovered_source_files(root, source_dir, testbench=None):
+    root, source_dir = Path(root).resolve(), Path(source_dir).resolve()
+    entries = []
+    # permit comments while keeping each source entry a single repository path.
+    for line in (root / "tb/recovered.f").read_text().splitlines():
+        entry = line.split("//", 1)[0].strip()
+        if entry:
+            entries.append(entry)
+    required = {"tb/crypto_dut.sv", "tb/crypto_tb.sv", "recovery/recovered_sim.v"}
+    # reject omissions and duplicates before attempting elaboration.
+    if not required.issubset(entries) or len(entries) != len(set(entries)):
+        raise ValueError("recovered.f must contain the wrapper, testbench, and recovered DUT once")
+    paths = []
+    # preserve candidate source selection while retaining the real recovered DUT.
+    for entry in entries:
+        relative = Path(entry)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("recovered.f entries must stay inside the repository")
+        if entry == "tb/crypto_tb.sv" and testbench is not None:
+            path = Path(testbench).resolve()
+        elif relative.parts[0] == "tb":
+            path = source_dir.joinpath(*relative.parts[1:])
+        else:
+            path = root / relative
+        if not path.is_file():
+            raise FileNotFoundError(f"Missing recovered simulation source: {path}")
+        paths.append(path)
+    return paths
+
+
+# compile SystemVerilog with an explicit top and only the needed vendor library.
+def recovered_compile_command(root, source_dir, executable, *, top="crypto_tb",
+                              testbench=None, tools=None):
+    root, source_dir = Path(root).resolve(), Path(source_dir).resolve()
+    primitives = primitive_inventory(root)
+    tools = tools or discover_tools(require_cells=bool(primitives))
+    sources = recovered_source_files(root, source_dir, testbench)
+    command = [tools["iverilog"], "-g2012", "-s", top, "-I", str(source_dir),
+               "-I", str(root / "tb"), "-o", str(Path(executable).resolve())]
+    # disable nonstandard port defaults in the actual iCE40 model library.
+    if primitives:
+        cells = Path(tools["cells"])
+        if not cells.is_file():
+            raise FileNotFoundError(f"Missing iCE40 simulation library: {cells}")
+        command.append("-DNO_ICE40_DEFAULT_ASSIGNMENTS")
+        sources.append(cells)
+    return command + [str(path) for path in sources]
 
 
 # count actual top-level SCK edges independently of the testbench summary.
@@ -418,18 +478,20 @@ def run_simulation(root, generated_dir, output_dir, seed=4313, random_trials=8,
     # reject invalid run parameters before invoking the toolchain.
     if not 0 <= seed <= 0xFFFFFFFF or not 0 <= random_trials <= 64 or not 0 < timeout_s <= 300:
         raise ValueError("Use a 32-bit seed, 0..64 random trials, and a bounded timeout")
-    tools = discover_tools()
-    output_dir.mkdir(parents=True, exist_ok=True)
+    primitives = primitive_inventory(root)
+    tools = discover_tools(require_cells=bool(primitives))
+    # prevent old waveforms or diagnostics from being accepted as new evidence.
+    output_dir.mkdir(parents=True, exist_ok=False)
     dut = root / "recovery/recovered_sim.v"
     original_hash = file_hash(dut)
     result = {"test_kind": "recovered_dut", "target": "crypto_tb",
               "passed": False, "seed": seed, "random_trials": random_trials,
-              "dut_sha256": original_hash, "tools": tools, "output_dir": str(output_dir)}
+              "dut_sha256": original_hash, "tools": tools, "output_dir": str(output_dir),
+              "primitive_inventory": primitives,
+              "source_file_list_sha256": file_hash(root / "tb/recovered.f")}
     executable = output_dir / "simulation.vvp"
     commands = {
-        "compile": [tools["iverilog"], "-g2012", "-s", "crypto_tb", "-I", str(generated_dir),
-                    "-o", str(executable), str(generated_dir / "crypto_dut.sv"),
-                    str(generated_dir / "crypto_tb.sv"), str(dut), tools["cells"]],
+        "compile": recovered_compile_command(root, generated_dir, executable, tools=tools),
         "simulation": [tools["vvp"], str(executable), f"+seed={seed}", f"+random_trials={random_trials}", *extra_plusargs],
     }
     (output_dir / "commands.json").write_text(json.dumps(commands, indent=2) + "\n")
@@ -473,13 +535,44 @@ def run_simulation(root, generated_dir, output_dir, seed=4313, random_trials=8,
         # require a complete known-valued processing trace in both modes.
         if [(mode, edge) for mode, edge, busy in trace] != expected_trace:
             raise ValueError("Missing or unknown processing-edge observations")
+        busy_measurements = {}
+        # require BUSY after START drops; START alone can assert this recovered output.
+        for mode in ("encrypt", "decrypt"):
+            samples = [(int(edge), int(busy)) for name, edge, busy in trace if name == mode]
+            idle_edges = [edge for edge, busy in samples if busy == 0]
+            if samples[0][1] != 1 or samples[1][1] != 1 or not idle_edges:
+                raise ValueError(f"{mode}: BUSY must remain asserted after START before completing")
+            completion = idle_edges[0]
+            if any(busy != int(edge < completion) for edge, busy in samples):
+                raise ValueError(f"{mode}: BUSY reasserted after completion")
+            busy_measurements[mode] = {"start_edge": 0, "post_start_busy_edge": 1,
+                                       "first_idle_edge": completion,
+                                       "busy_by_edge": samples}
+        expected_values = {"baseline.echo": "59c359c3", "baseline.encrypt": "9cd84392",
+                           "baseline.decrypt": "59c359c3"}
+        checked_values = {}
+        # require each known-valued supplied comparison exactly once.
+        for name, expected in expected_values.items():
+            values = re.findall(r"^PASS " + re.escape(name) + r" value=([0-9a-f]{8})$", output, re.M)
+            if values != [expected]:
+                raise ValueError(f"Missing, unknown, duplicated, or incorrect output: {name}")
+            checked_values[name] = {"actual": values[0], "expected": expected, "passed": True}
+        # record reset success separately from later idle completion observations.
+        for name in ("baseline.reset", "baseline.decrypt_reset"):
+            if len(re.findall(r"^PASS " + re.escape(name) + r" busy=0$", output, re.M)) != 1:
+                raise ValueError(f"Missing or duplicated reset result: {name}")
         result.update(passed=True, checks=checks, baseline_pulses=baseline, total_pulses=total,
-                      waveform=str(waveform), processing_trace=trace)
+                      waveform=str(waveform), processing_trace=trace,
+                      checked_values=checked_values, checked_outputs_known=True,
+                      busy_measurements=busy_measurements)
     except Exception as error:
         result["error"] = str(error)
         raise SimulationError(str(error), result) from error
     finally:
         result["dut_unchanged"] = file_hash(dut) == original_hash
+        # retain a failing result if source provenance changes during execution.
+        if not result["dut_unchanged"]:
+            result.update(passed=False, error="Recovered DUT changed during validation")
         (output_dir / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     # protect source provenance even if a candidate somehow modified the input.
     if not result["dut_unchanged"]:

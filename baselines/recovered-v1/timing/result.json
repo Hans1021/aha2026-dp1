@@ -1,0 +1,267 @@
+{
+  "test_kind": "recovered_dut",
+  "target": "baseline_timing_tb",
+  "passed": true,
+  "checked_outputs_known": true,
+  "dut_sha256": "c641ded5b074308a346f2b374f127b96120acfdd99f1c045c8ceea60f34dcfe7",
+  "output_dir": "$RUN/timing",
+  "tools": {
+    "iverilog": "$OSS_CAD_SUITE/bin/iverilog",
+    "vvp": "$OSS_CAD_SUITE/bin/vvp",
+    "cells": "$OSS_CAD_SUITE/share/yosys/ice40/cells_sim.v"
+  },
+  "compile_returncode": 0,
+  "simulation_returncode": 0,
+  "measurements": {
+    "start_without_clock": [
+      {
+        "phase": "assert_no_clock",
+        "busy": 1
+      },
+      {
+        "phase": "release_no_clock",
+        "busy": 0
+      }
+    ],
+    "reset_active": [
+      {
+        "phase": "assert_no_clock",
+        "busy": 0
+      },
+      {
+        "phase": "release_no_clock",
+        "busy": 1
+      },
+      {
+        "phase": "release_after_reset_clock",
+        "busy": 0
+      }
+    ],
+    "reset_data": [
+      {
+        "phase": "unclocked_reset",
+        "word": "ffffffff"
+      },
+      {
+        "phase": "reset_edge",
+        "miso": 1
+      },
+      {
+        "phase": "release_edge",
+        "miso": 0
+      },
+      {
+        "phase": "clocked_reset",
+        "word": "00000000"
+      }
+    ],
+    "busy": {
+      "encrypt": [
+        {
+          "edge": -1,
+          "busy": 0
+        },
+        {
+          "edge": 0,
+          "busy": 1
+        },
+        {
+          "edge": 1,
+          "busy": 1
+        },
+        {
+          "edge": 2,
+          "busy": 1
+        },
+        {
+          "edge": 3,
+          "busy": 0
+        },
+        {
+          "edge": 4,
+          "busy": 0
+        },
+        {
+          "edge": 5,
+          "busy": 0
+        },
+        {
+          "edge": 6,
+          "busy": 0
+        },
+        {
+          "edge": 7,
+          "busy": 0
+        }
+      ],
+      "decrypt": [
+        {
+          "edge": -1,
+          "busy": 0
+        },
+        {
+          "edge": 0,
+          "busy": 1
+        },
+        {
+          "edge": 1,
+          "busy": 1
+        },
+        {
+          "edge": 2,
+          "busy": 1
+        },
+        {
+          "edge": 3,
+          "busy": 0
+        },
+        {
+          "edge": 4,
+          "busy": 0
+        },
+        {
+          "edge": 5,
+          "busy": 0
+        },
+        {
+          "edge": 6,
+          "busy": 0
+        },
+        {
+          "edge": 7,
+          "busy": 0
+        }
+      ]
+    },
+    "read_boundaries": {
+      "encrypt": [
+        {
+          "after_edge": 0,
+          "busy_before": 1,
+          "word": "59c359c3",
+          "expected": "9cd84392",
+          "match": false
+        },
+        {
+          "after_edge": 1,
+          "busy_before": 1,
+          "word": "59c359c3",
+          "expected": "9cd84392",
+          "match": false
+        },
+        {
+          "after_edge": 2,
+          "busy_before": 1,
+          "word": "59c359c3",
+          "expected": "9cd84392",
+          "match": false
+        },
+        {
+          "after_edge": 3,
+          "busy_before": 0,
+          "word": "59c359c3",
+          "expected": "9cd84392",
+          "match": false
+        },
+        {
+          "after_edge": 4,
+          "busy_before": 0,
+          "word": "9cd84392",
+          "expected": "9cd84392",
+          "match": true
+        },
+        {
+          "after_edge": 5,
+          "busy_before": 0,
+          "word": "9cd84392",
+          "expected": "9cd84392",
+          "match": true
+        },
+        {
+          "after_edge": 6,
+          "busy_before": 0,
+          "word": "9cd84392",
+          "expected": "9cd84392",
+          "match": true
+        },
+        {
+          "after_edge": 7,
+          "busy_before": 0,
+          "word": "9cd84392",
+          "expected": "9cd84392",
+          "match": true
+        }
+      ],
+      "decrypt": [
+        {
+          "after_edge": 0,
+          "busy_before": 1,
+          "word": "9cd84392",
+          "expected": "59c359c3",
+          "match": false
+        },
+        {
+          "after_edge": 1,
+          "busy_before": 1,
+          "word": "9cd84392",
+          "expected": "59c359c3",
+          "match": false
+        },
+        {
+          "after_edge": 2,
+          "busy_before": 1,
+          "word": "9cd84392",
+          "expected": "59c359c3",
+          "match": false
+        },
+        {
+          "after_edge": 3,
+          "busy_before": 0,
+          "word": "9cd84392",
+          "expected": "59c359c3",
+          "match": false
+        },
+        {
+          "after_edge": 4,
+          "busy_before": 0,
+          "word": "59c359c3",
+          "expected": "59c359c3",
+          "match": true
+        },
+        {
+          "after_edge": 5,
+          "busy_before": 0,
+          "word": "59c359c3",
+          "expected": "59c359c3",
+          "match": true
+        },
+        {
+          "after_edge": 6,
+          "busy_before": 0,
+          "word": "59c359c3",
+          "expected": "59c359c3",
+          "match": true
+        },
+        {
+          "after_edge": 7,
+          "busy_before": 0,
+          "word": "59c359c3",
+          "expected": "59c359c3",
+          "match": true
+        }
+      ]
+    },
+    "first_completed_edge": {
+      "encrypt": 3,
+      "decrypt": 3
+    },
+    "first_matching_read_boundary": {
+      "encrypt": 4,
+      "decrypt": 4
+    }
+  },
+  "checks": 105,
+  "total_pulses": 1443,
+  "waveform": "$RUN/timing/waveforms.vcd",
+  "dut_unchanged": true
+}

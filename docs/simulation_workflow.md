@@ -4,6 +4,11 @@ Open [the notebook](../tb/llm_aided_spi_tb_generation.ipynb)
 and run its cells in order. Its Markdown cells contain headings only; explanations
 appear in code comments, model-response output, and saved artifacts.
 
+The accepted real-DUT reference is now frozen as `baseline-recovered-v1`.
+Run `make baseline` to verify its pinned inputs and reproduce all seven acceptance
+criteria. See [the frozen-baseline record](frozen_baseline.md) for build flags,
+reset behavior, measured read availability, and immutable reproduction instructions.
+
 ## Independent driver target
 
 The notebook defaults to `AHA_TEST_TARGET=tb_driver`. It generates or replays an
@@ -219,9 +224,12 @@ reproducibility, not the output of future live model requests.
 Both encryption and decryption observe BUSY high at `e0`, `e1`, and `e2`, then
 low at `e3` through `e7`. Here `e0` is the START rising edge. The replay retains all
 seven following pulses and passes the supplied plaintext/ciphertext comparisons.
-The exact internal result-load edge and earliest valid readout have not yet been
-measured. The earlier transaction specification's pending-measurement note describes
-its original snapshot; these are the subsequent measurements from this workflow.
+Separate acceptance probes now show that starting readout after e3 returns old
+input, while starting after e4 returns the expected result in both modes. This
+measures the earliest tested safe read-start boundary, not an internal load net.
+The earlier transaction specification's pending-measurement note describes its
+original snapshot; [the frozen baseline](frozen_baseline.md) records the later
+measurements. The application replay still waits through e7.
 
 Run the regression suite from the repository root:
 

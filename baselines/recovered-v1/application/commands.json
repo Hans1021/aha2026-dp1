@@ -1,0 +1,25 @@
+{
+  "compile": [
+    "$OSS_CAD_SUITE/bin/iverilog",
+    "-g2012",
+    "-s",
+    "crypto_tb",
+    "-I",
+    "$REPO/tb",
+    "-I",
+    "$REPO/tb",
+    "-o",
+    "$RUN/application/simulation.vvp",
+    "-DNO_ICE40_DEFAULT_ASSIGNMENTS",
+    "$REPO/tb/crypto_dut.sv",
+    "$REPO/tb/crypto_tb.sv",
+    "$REPO/recovery/recovered_sim.v",
+    "$OSS_CAD_SUITE/share/yosys/ice40/cells_sim.v"
+  ],
+  "simulation": [
+    "$OSS_CAD_SUITE/bin/vvp",
+    "$RUN/application/simulation.vvp",
+    "+seed=4313",
+    "+random_trials=0"
+  ]
+}

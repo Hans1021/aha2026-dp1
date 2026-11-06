@@ -16,3 +16,11 @@ Store AI logs under `ai_logs/<source-directory-name>/`; the `tb/` notebook uses
 
 Keep mock peripheral validation in the `tb_driver` target. Label its results as
 driver tests; they do not validate the recovered cryptographic circuit.
+
+# Frozen recovered baseline
+
+`baseline-recovered-v1` identifies the accepted baseline commit. Keep that tag,
+`baselines/recovered-v1/`, and every input pinned by its manifest unchanged.
+Use separate sources for experiments; reproduce the baseline from its tagged
+checkout with `make baseline`. Never overwrite reference evidence to make a
+failing comparison pass. An intentional new baseline requires a new version.

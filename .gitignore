@@ -1,1 +1,12 @@
 *.vvp
+
+# exclude transient Python, Jupyter, and waveform artifacts.
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+results/simulation/
+
+# keep gateway credentials outside version control.
+.env
+.env.*

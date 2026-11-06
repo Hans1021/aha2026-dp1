@@ -377,7 +377,7 @@ def discover_tools():
 
 
 # count actual top-level SCK edges independently of the testbench summary.
-def count_sck_edges(path):
+def count_sck_edges(path, top="crypto_tb"):
     scope, symbol, value, rising = [], None, None, 0
     # stream VCD data instead of loading all internal-net activity at once.
     with Path(path).open() as stream:
@@ -389,7 +389,7 @@ def count_sck_edges(path):
                 scope.append(parts[2])
             elif line.startswith("$upscope"):
                 scope.pop()
-            elif line.startswith("$var") and scope == ["crypto_tb"] and parts[4] == "SCK":
+            elif line.startswith("$var") and scope == [top] and parts[4] == "SCK":
                 symbol = parts[3]
             elif symbol and line.strip() in ("0" + symbol, "1" + symbol, "x" + symbol, "z" + symbol):
                 new = line[0]
@@ -399,7 +399,7 @@ def count_sck_edges(path):
                 value = new
     # missing clocks indicate an invalid or incomplete waveform.
     if symbol is None:
-        raise ValueError("VCD does not contain crypto_tb.SCK")
+        raise ValueError(f"VCD does not contain {top}.SCK")
     return rising
 
 
@@ -422,7 +422,8 @@ def run_simulation(root, generated_dir, output_dir, seed=4313, random_trials=8,
     output_dir.mkdir(parents=True, exist_ok=True)
     dut = root / "recovery/recovered_sim.v"
     original_hash = file_hash(dut)
-    result = {"passed": False, "seed": seed, "random_trials": random_trials,
+    result = {"test_kind": "recovered_dut", "target": "crypto_tb",
+              "passed": False, "seed": seed, "random_trials": random_trials,
               "dut_sha256": original_hash, "tools": tools, "output_dir": str(output_dir)}
     executable = output_dir / "simulation.vvp"
     commands = {

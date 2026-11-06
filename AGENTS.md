@@ -10,6 +10,9 @@
 
 # Simulation notebook
 
-Keep the workflow notebook at `tb/LLM_Aided_SPI_Testbench_Generation.ipynb`.
+Keep the workflow notebook at `tb/llm_aided_spi_tb_generation.ipynb`.
 Store AI logs under `ai_logs/<source-directory-name>/`; the `tb/` notebook uses
 `ai_logs/tb/`.
+
+Keep mock peripheral validation in the `tb_driver` target. Label its results as
+driver tests; they do not validate the recovered cryptographic circuit.

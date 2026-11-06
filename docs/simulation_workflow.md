@@ -1,8 +1,44 @@
 # AI-aided reusable SPI testbench workflow
 
-Open [the notebook](../tb/LLM_Aided_SPI_Testbench_Generation.ipynb)
+Open [the notebook](../tb/llm_aided_spi_tb_generation.ipynb)
 and run its cells in order. Its Markdown cells contain headings only; explanations
 appear in code comments, model-response output, and saved artifacts.
+
+## Independent driver target
+
+The notebook defaults to `AHA_TEST_TARGET=tb_driver`. It generates or replays an
+AI-generated mock, then exercises the existing SPI driver against that peripheral.
+It needs Icarus Verilog and `vvp`, but no recovered RTL or iCE40 cell models.
+Its output is labeled **DRIVER TEST**. A mock pass establishes the tested serial
+harness behavior; it cannot establish that the recovered cryptographic circuit works.
+
+The mock returns configured MISO words independently of MOSI. The scoreboard
+checks received words, captured MOSI, and frame counts. A separate passive
+monitor reconstructs MOSI from the wires and requires exactly 32 rising SCK edges
+under each uninterrupted CS assertion. Directed asymmetric patterns expose bit
+ordering errors; seeded patterns add reproducible trials. Readout explicitly
+transmits MOSI, and deselected clocks must not shift the input register.
+
+The mock's START/BUSY delay is an arbitrary test fixture rule, not a measurement
+of recovered hardware. Both targets reuse `spi_operations.svh`, whose pulse task
+owns SCK. The mock registers MISO on the rising edge; the driver samples after NBA
+updates, and a separate 1 ns settling delay follows CS release before checking
+frame telemetry. The mock has simulation-only framing state and is not a
+synthesis input.
+
+Run either target without Jupyter from the repository root:
+
+```bash
+make tb_driver
+make tb_recovered
+```
+
+The Make targets use the checked-in sources. The notebook additionally supports
+generating a new mock through Portkey, with its prompt and response logged.
+Select `AHA_TEST_TARGET=crypto_tb` before starting the kernel for the recovered-DUT
+workflow. It retains the supplied application vectors and processing sequence;
+the mock is never linked into that target. Results identify their `test_kind`
+and `target` so driver checks remain distinguishable from recovered-DUT checks.
 
 ## Setup and generation modes
 
@@ -10,20 +46,21 @@ Install the notebook dependencies in your preferred Python environment:
 
 ```bash
 python -m pip install -r requirements-notebook.txt
-jupyter lab tb/LLM_Aided_SPI_Testbench_Generation.ipynb
+jupyter lab tb/llm_aided_spi_tb_generation.ipynb
 ```
 
 The workflow discovers the installed OSS CAD Suite at
 `~/.local/opt/oss-cad-suite`. Set `OSS_CAD_SUITE` to another suite location if
 needed. `ICE40_CELLS_SIM` can override the location of Yosys's actual iCE40 cell
-models. The recovered DUT is always `recovery/recovered_sim.v`; its bytes are
-checked before and after simulation.
+models for the recovered target. That target uses `recovery/recovered_sim.v`;
+its bytes are checked before and after simulation.
 
 The notebook has two explicit modes:
 
-- **`replay` (default):** load the recorded Codex-generated response in
-  `ai_logs/tb/bootstrap/response.json`, materialize its source, and run it against
-  the real recovered DUT. This needs no API key and is not a simulated API call.
+- **`replay` (default):** load the recorded Codex-generated mock from
+  `ai_logs/tb/driver_bootstrap/response.json`. The recovered target instead loads
+  `ai_logs/tb/bootstrap/response.json`. Materialize and test the selected sources.
+  This needs no API key and is not a simulated API call.
   The rendered prompt must match the recorded request; source/prompt edits require
   a fresh generation rather than silently reusing stale output.
 - **`live`:** set `AHA_GENERATION_MODE=live` and `PORTKEY_API_KEY` in the kernel's
@@ -44,16 +81,20 @@ once without it and omits it on later requests. Other errors propagate without
 this retry. SDK automatic retries are disabled so every client attempt is logged.
 The dependency is pinned to the validated `portkey-ai` version 2.3.4.
 
-Each notebook run creates fresh `results/simulation/<run-id>/attempt-NN/`
-directories. Compiler commands, source files, scheduling explanations, compiler
-and simulator output, result JSON, and `waveforms.vcd` remain available per
-attempt. Generated build/waveform directories are ignored by Git. Open the VCD
-path printed by the notebook in GTKWave.
+Each notebook run creates fresh `results/simulation/<run-id>/tb_driver/` or
+`results/simulation/<run-id>/attempt-NN/` directories. Compiler commands, source
+files, scheduling explanations, compiler and simulator output, result JSON, and
+`waveforms.vcd` remain available per attempt. Generated build/waveform directories
+are ignored by Git. Open the VCD
+path printed by the notebook in GTKWave. Driver runs require a fresh output
+directory, preventing a prior run's waveform from becoming new evidence.
 
 ## Prompt and response logging
 
-The notebook's `ask_ai()` uses the shared logging wrapper and `LLMClient` in
-[`scripts/testbench_workflow.py`](../scripts/testbench_workflow.py). Every attempt
+The notebook's mock requests use [`scripts/driver_workflow.py`](../scripts/driver_workflow.py),
+and recovered requests use `ask_ai()` and
+[`scripts/testbench_workflow.py`](../scripts/testbench_workflow.py). Both use the
+same logged `LLMClient`. Every attempt
 appends its full system/user messages **before** requesting a response, then
 appends the complete SDK-serialized response **before** extracting or validating
 the generated artifacts. HTTP errors retain their response body. Requests that
@@ -62,6 +103,9 @@ the same transcript:
 
 ```text
 ai_logs/tb/
+├── driver_bootstrap/
+│   ├── request.json
+│   └── response.json
 ├── bootstrap/
 │   ├── initial_request.json
 │   ├── initial_response.json
@@ -75,7 +119,7 @@ the source directory's name for its subfolder: `tb/` writes to `ai_logs/tb/`, an
 `scripts/` would write to `ai_logs/scripts/`. Source directories must exist inside
 the checkout. Repository-relative paths are also accepted, so routing does not
 depend on the kernel's working directory. Default replay artifacts are resolved
-under the same source folder's `bootstrap/` directory.
+under that source folder's `bootstrap/` or `driver_bootstrap/` directory.
 
 Run IDs prevent overwriting earlier logs. Events record timestamps, source
 fingerprints, request settings, validation results, and simulation observations.
@@ -95,13 +139,15 @@ The earlier `ai_logs/bao/` directory was moved to `ai_logs/tb/`. Existing transc
 bytes are preserved, including any historical paths recorded in those events.
 New runs and notebook outputs use the source-based location.
 
-Live validation gets at most three generation attempts. Each failed attempt feeds
-bounded compiler/simulator diagnostics and the previous candidate back to the
-model. The loop never changes the recovered DUT or supplied expected values.
+Recovered-DUT live validation gets at most three generation attempts. Each failed
+attempt feeds bounded compiler/simulator diagnostics and the previous candidate
+back to the model. Mock generation uses one attempt and stops on failure, preserving its
+diagnostics. The loop never changes the recovered DUT or supplied expected values.
 Replay has one attempt and never falls back to a live request. Each SDK call has a
 120-second timeout, including the possible single retry without `temperature`.
 Compile/simulate subprocesses each have a 30-second wall-clock bound, and the
-generated testbench has a 100 ms simulation watchdog.
+recovered testbench has a 100 ms simulation watchdog. The driver test has a
+separate 20 ms simulation watchdog.
 
 ## Reusable operations and scheduling
 
@@ -114,6 +160,10 @@ The checked-in AI-generated files are:
   unchanged recovered design.
 - [`tb/crypto_tb.sv`](../tb/crypto_tb.sv): exact application replay followed by
   optional seeded SPI echo trials.
+- [`tb/spi_mock_peripheral.sv`](../tb/spi_mock_peripheral.sv): generated serial
+  fixture with independent response configuration and framing telemetry.
+- [`tb/tb_driver.sv`](../tb/tb_driver.sv): driver tests with a passive wire monitor
+  and known-value scoreboard expectations.
 
 Only `sck_pulse` changes SCK after time-zero initialization. All stimulus is
 sequential. Controls and MOSI change while SCK is low, then remain stable for
@@ -141,7 +191,23 @@ This mapping is supported by recovered connectivity and the passing supplied
 transactions; the RP2040 GPIO numbers in the application are a different numbering
 scheme. No standard AES behavior or key-loading protocol is inferred.
 
-## Measured validation
+## Driver validation
+
+At seed 4313, `tb_driver` passes 75 named checks across 14 frames and 457 SCK
+pulses. Six directed words and eight seeded words exercise both serial directions.
+VCD inspection independently verifies the rising-edge count. Regression runs also
+verify repeatable seed-zero stimulus and the maximum unsigned 32-bit seed.
+
+Eleven deliberate fault scenarios exit nonzero: reversed TX/RX, short/long/split
+CS frames, a scoreboard mismatch, X/Z comparisons, X/Z MISO, and a completion
+timeout. Tests require the expected diagnostic, not a later watchdog or fallback
+failure. Missing waveforms fail; reused output directories are rejected without
+altering prior evidence. A separate notebook regression runs every default code
+cell in a checkout with no `recovery/` directory and no iCE40 models.
+
+These results validate the driver against its mock contract only.
+
+## Recovered-DUT measurements
 
 With seed 4313 and eight extra SPI echo trials, the real recovered-core simulation
 passes 24 named checks over 708 SCK pulses. The application portion remains exactly

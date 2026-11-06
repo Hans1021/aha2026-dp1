@@ -614,11 +614,11 @@ class NotebookTests(unittest.TestCase):
 
     # a failed later request must not reuse an earlier attempt's model response.
     def test_bounded_repair_uses_only_current_attempt_feedback(self):
-        notebook_path = ROOT / "tb/LLM_Aided_SPI_Testbench_Generation.ipynb"
+        notebook_path = ROOT / "tb/llm_aided_spi_tb_generation.ipynb"
         notebook = json.loads(notebook_path.read_text())
         source = next(
             "".join(cell["source"]) for cell in notebook["cells"]
-            if cell["cell_type"] == "code" and "for attempt in range" in "".join(cell["source"])
+            if cell["cell_type"] == "code" and cell["id"] == "spi-generation-15"
         )
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -639,7 +639,7 @@ class NotebookTests(unittest.TestCase):
                 )
             repair = mock.Mock(return_value="bounded repair prompt")
             namespace = {
-                "generation_prompt": "initial generation prompt", "MAX_ATTEMPTS": 3,
+                "TARGET": "crypto_tb", "generation_prompt": "initial generation prompt", "MAX_ATTEMPTS": 3,
                 "RUN_DIR": directory / "attempts", "logger": logger, "json": json,
                 "ask_ai": ask_ai, "validate_artifacts": workflow.validate_artifacts,
                 "write_artifacts": workflow.write_artifacts, "repair_prompt": repair,
@@ -655,10 +655,56 @@ class NotebookTests(unittest.TestCase):
             self.assertIn("no response", json.dumps(current_feedback).lower())
             self.assertNotIn("operations fixture", json.dumps(current_feedback))
 
+    # execute the default notebook with no recovered RTL or iCE40 model dependency.
+    def test_default_notebook_runs_without_recovered_dut(self):
+        from scripts.driver_workflow import discover_driver_tools
+        # skip only when an external simulator executable is unavailable.
+        try:
+            discover_driver_tools()
+        except FileNotFoundError as error:
+            self.skipTest(str(error))
+        with tempfile.TemporaryDirectory() as temporary:
+            checkout = Path(temporary)
+            # copy only independent source inputs and the recorded mock generation.
+            for name in ("tb", "scripts", "prompts", "docs", "inputs"):
+                shutil.copytree(ROOT / name, checkout / name,
+                                ignore=shutil.ignore_patterns("__pycache__", ".ipynb_checkpoints"))
+            shutil.copytree(ROOT / "ai_logs/tb/driver_bootstrap",
+                            checkout / "ai_logs/tb/driver_bootstrap")
+            environment = dict(os.environ)
+            environment.update(AHA_REPO_ROOT=str(checkout), AHA_GENERATION_MODE="replay",
+                               PORTKEY_API_KEY="", ICE40_CELLS_SIM=str(checkout / "absent_cells.v"),
+                               GIT_DIR=str(ROOT / ".git"))
+            environment.pop("AHA_TEST_TARGET", None)
+            # run code cells in order with an outer bound on the entire notebook.
+            runner = "\n".join([
+                "import json",
+                "from pathlib import Path",
+                "path = Path('tb/llm_aided_spi_tb_generation.ipynb')",
+                "notebook = json.loads(path.read_text())",
+                "scope = {}",
+                "for cell in notebook['cells']:",
+                "    if cell['cell_type'] == 'code':",
+                "        exec(compile(''.join(cell['source']), str(path), 'exec'), scope)",
+            ])
+            executed = subprocess.run([sys.executable, "-c", runner], cwd=checkout,
+                                      env=environment, capture_output=True, text=True, timeout=60)
+            self.assertEqual(executed.returncode, 0, executed.stdout + executed.stderr)
+            self.assertIn("DRIVER TEST PASS", executed.stdout)
+            self.assertIn("RECOVERED DUT TEST skipped", executed.stdout)
+            self.assertNotIn("RECOVERED DUT TEST PASS", executed.stdout)
+            self.assertFalse((checkout / "recovery").exists())
+            result_path, = checkout.glob("results/simulation/*/tb_driver/simulation/result.json")
+            result = json.loads(result_path.read_text())
+            self.assertTrue(result["passed"])
+            self.assertEqual((result["test_kind"], result["target"]), ("driver", "tb_driver"))
+            self.assertTrue(any((checkout / "ai_logs/tb/runs").glob("*/events.jsonl")))
+
     # allow heading-only Markdown cells and executable code cells in every notebook.
     def test_notebook_markdown_contains_only_headings(self):
         notebooks = sorted(ROOT.rglob("*.ipynb"))
-        self.assertIn(ROOT / "tb/LLM_Aided_SPI_Testbench_Generation.ipynb", notebooks)
+        self.assertIn(ROOT / "tb/llm_aided_spi_tb_generation.ipynb", notebooks)
+        self.assertFalse((ROOT / "tb/LLM_Aided_SPI_Testbench_Generation.ipynb").exists())
         self.assertFalse((ROOT / "notebooks/Bao_Nguyen-LLM_Aided_SPI_Testbench_Generation.ipynb").exists())
         # inspect every saved cell; explanatory prose belongs in code comments or outputs.
         for path in notebooks:

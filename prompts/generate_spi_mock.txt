@@ -1,0 +1,34 @@
+Generate an AI-authored simulation-only serial mock for the attached trusted
+SPI driver harness. This is the tb_driver target: it validates the harness's bit
+ordering, CS framing, and scoreboard. It cannot establish that a recovered
+cryptographic circuit works. Do not implement AES or any crypto transformation.
+Do not modify the harness, shared operations, or a recovered DUT.
+
+Return exactly one JSON object with string fields mock_sv and
+scheduling_explanation. The module must be named spi_mock_peripheral with inputs
+SCK, RST_N, MOSI, NORM_CS_N, START, ENC_DEC, and [31:0] RESPONSE_WORD; outputs
+MISO, BUSY, ICE_LED, [31:0] RECEIVED_WORD, [31:0] FRAME_COUNT, [31:0] FRAME_BITS.
+
+RESPONSE_WORD is test-only configuration latched at CS assertion, independent of
+MOSI. Shift its MSB onto registered MISO at each selected rising SCK. Shift MOSI
+MSB first into RECEIVED_WORD. Require exactly 32 rising edges per uninterrupted
+CS-low frame; reject short, split, and overlong selections. CS changes must occur
+while SCK is low. Count completed frames at CS release. Ignore serial traffic
+while CS is high. Apply synchronous active-low reset on a rising SCK. A START
+pulse outside selection sets BUSY, and exactly three additional SCK rising edges
+clear BUSY. This latency is an arbitrary mock rule, not a claim about hardware.
+
+The harness uses deterministic timing and seed 4313 by default, with a fixed LCG
+and bounded runs. Preserve one consistent source of SCK transitions in
+spi_operations.svh. Do not drive SCK or introduce a mock clock. Timeouts must
+bound every potentially unbounded wait; the mock should contain no waits.
+Treat X/Z control or comparison values as failures. Emit clear DRIVER FAIL
+names and nonzero simulator exits for framing faults. The harness emits named
+pass/fail results and waveforms; do not add file access or system commands.
+
+Explain drive/sample scheduling: controls and MOSI change while SCK is low,
+inputs have a half-period setup interval, registered MISO settles through NBA,
+and the harness samples after a 1 ns delay. State how the separate CS monitor
+settles before scoreboard telemetry is checked. Use concise lowercase comment
+prose except names, acronyms, and identifiers, with comment blocks before each
+logical block. No inferred encryption oracle and no key-loading transaction.

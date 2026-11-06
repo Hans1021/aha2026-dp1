@@ -7,3 +7,7 @@
 - Use brief inline comments for local details such as modes and cell coordinates.
 - Explain relevant functions, clock/reset behavior, and interrupts when present.
 - Preserve executable behavior when changing comments in supplied or generated code.
+
+# Simulation notebook
+
+Keep the workflow notebook at `tb/LLM_Aided_SPI_Testbench_Generation.ipynb`.

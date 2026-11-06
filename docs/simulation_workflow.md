@@ -1,6 +1,6 @@
 # AI-aided reusable SPI testbench workflow
 
-Open [the notebook](../notebooks/Bao_Nguyen-LLM_Aided_SPI_Testbench_Generation.ipynb)
+Open [the notebook](../tb/LLM_Aided_SPI_Testbench_Generation.ipynb)
 and run its cells in order. Its Markdown cells contain headings only; explanations
 appear in code comments, model-response output, and saved artifacts.
 
@@ -10,7 +10,7 @@ Install the notebook dependencies in your preferred Python environment:
 
 ```bash
 python -m pip install -r requirements-notebook.txt
-jupyter lab notebooks/Bao_Nguyen-LLM_Aided_SPI_Testbench_Generation.ipynb
+jupyter lab tb/LLM_Aided_SPI_Testbench_Generation.ipynb
 ```
 
 The workflow discovers the installed OSS CAD Suite at
@@ -33,8 +33,16 @@ The notebook has two explicit modes:
   depends on the gateway account. This change does not verify a live gateway call
   because no key was configured in the development session.
 
-The live path uses the gateway's OpenAI-compatible chat-completions interface;
-response JSON is validated locally before use. [Portkey API documentation](https://docs1.portkey.ai/docs/product/ai-gateway/universal-api)
+The live path follows the lab's `LLMClient` interface: `generate()` sends messages
+through `Portkey` from `portkey_ai`, using `client.chat.completions.create()`, and
+returns the response text. `is_available()` checks whether a key is configured;
+it does not test gateway access. The notebook reuses this client across generation
+and repair attempts. Response JSON is validated locally before use.
+
+If the gateway explicitly rejects the `temperature` parameter, the client retries
+once without it and omits it on later requests. Other errors propagate without
+this retry. SDK automatic retries are disabled so every client attempt is logged.
+The dependency is pinned to the validated `portkey-ai` version 2.3.4.
 
 Each notebook run creates fresh `results/simulation/<run-id>/attempt-NN/`
 directories. Compiler commands, source files, scheduling explanations, compiler
@@ -44,11 +52,13 @@ path printed by the notebook in GTKWave.
 
 ## Prompt and response logging
 
-The notebook's `ask_ai()` uses the shared logging wrapper in
+The notebook's `ask_ai()` uses the shared logging wrapper and `LLMClient` in
 [`scripts/testbench_workflow.py`](../scripts/testbench_workflow.py). Every attempt
 appends its full system/user messages **before** requesting a response, then
-appends the raw response **before** decoding or validating it. Requests that
-fail, invalid JSON, and repair attempts remain in the same transcript:
+appends the complete SDK-serialized response **before** extracting or validating
+the generated artifacts. HTTP errors retain their response body. Requests that
+fail, invalid JSON, repair attempts, and any retry without `temperature` remain in
+the same transcript:
 
 ```text
 ai_logs/bao/
@@ -71,15 +81,16 @@ artifacts from the Codex session that created this workflow. They are not Portke
 API transcripts or a complete export of the surrounding chat. The initial request
 contained a proposed CS/mode mapping; real simulation corrected it. The revised
 request uses the validated mapping, and the original request/response are retained.
-Future notebook calls automatically capture their complete API messages and raw
-outputs through the logger.
+Future notebook calls automatically capture their complete API messages and
+serialized response or error outputs through the logger.
 
 Live validation gets at most three generation attempts. Each failed attempt feeds
 bounded compiler/simulator diagnostics and the previous candidate back to the
 model. The loop never changes the recovered DUT or supplied expected values.
-Replay has one attempt and never falls back to a live request. HTTP calls have a
-120-second timeout, compile/simulate subprocesses each have a 30-second wall-clock
-bound, and the generated testbench has a 100 ms simulation watchdog.
+Replay has one attempt and never falls back to a live request. Each SDK call has a
+120-second timeout, including the possible single retry without `temperature`.
+Compile/simulate subprocesses each have a 30-second wall-clock bound, and the
+generated testbench has a 100 ms simulation watchdog.
 
 ## Reusable operations and scheduling
 
@@ -144,9 +155,9 @@ python -m unittest discover -s tests -v
 The tests exercise actual recovered-core transactions and seeded echoes, then
 check failure paths for incorrect expected ciphertext, unknown BUSY/MISO/data,
 matching unknown expectations, stuck-BUSY timeout, missing waveforms, and invalid
-summaries. Gateway tests use labeled transport fixtures to verify logging and
-errors without claiming successful live generation. No generated Python oracle is
-executed, and no coverage percentage is claimed.
+summaries. Gateway tests use SDK fixtures to verify logging, parameter retries,
+and errors without claiming successful live generation. No generated Python
+oracle is executed, and no coverage percentage is claimed.
 
 ## Lab and paper references
 

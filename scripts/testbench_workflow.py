@@ -1,6 +1,6 @@
 """generate, log, and validate reusable SPI testbenches."""
 
-# use standard file/process helpers; import HTTP support only for live generation.
+# use standard helpers; load the Portkey SDK only for live generation.
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -68,13 +68,21 @@ class AILogger:
         self.run_dir = self.root / "ai_logs/bao/runs" / self.run_id
         self.run_dir.mkdir(parents=True, exist_ok=False)
         self.events_path = self.run_dir / "events.jsonl"
+        self._secrets = set()
+
+    # redact explicit keys as well as environment-provided credentials.
+    def register_secret(self, secret):
+        # ignore absent credentials while retaining earlier keys for redaction.
+        if secret:
+            self._secrets.add(secret)
 
     # remove configured credentials even if a remote error echoes their values.
     def _redact(self, value):
         text = json.dumps(value, ensure_ascii=False)
+        secrets = self._secrets | {os.environ.get(name) for name in
+                                   ("PORTKEY_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY")}
         # redact credential values without recording request headers.
-        for name in ("PORTKEY_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY"):
-            secret = os.environ.get(name)
+        for secret in sorted(filter(None, secrets), key=len, reverse=True):
             # escape secrets exactly as JSON encodes them.
             if secret:
                 text = text.replace(json.dumps(secret, ensure_ascii=False)[1:-1], "[redacted]")
@@ -112,63 +120,159 @@ def parse_response(text):
     return payload
 
 
-# log every attempted generation; replay is explicit and never an error fallback.
+# match the lab's Portkey client while preserving an audit for every SDK call.
+class LLMClient:
+    # defer SDK creation so replay and configuration work without an API key.
+    def __init__(self, api_key=None, model=None, provider="portkey", *, logger,
+                 timeout_s=120, sdk_factory=None):
+        # keep the provider explicit and network waits bounded.
+        if provider != "portkey":
+            raise ValueError(f"Unsupported provider: {provider}")
+        if not 0 < timeout_s <= 300:
+            raise ValueError("Use a timeout in (0, 300] seconds")
+        self.provider = provider
+        self.model = model or os.environ.get("PORTKEY_MODEL") or DEFAULT_MODEL
+        self.api_key = api_key or os.environ.get("PORTKEY_API_KEY")
+        self.base_url = os.environ.get("PORTKEY_BASE_URL", DEFAULT_BASE_URL)
+        self.logger = logger
+        self.logger.register_secret(self.api_key)
+        self.timeout_s = timeout_s
+        self.sdk_factory = sdk_factory
+        self.client = None
+        self.use_temperature = True
+        self.last_request_id = None
+
+    # report local credential configuration without contacting the gateway.
+    def is_available(self):
+        return bool(self.api_key and self.api_key.strip())
+
+    # construct one reusable SDK client with its hidden retries disabled.
+    def _get_client(self):
+        # retain the same connection pool across generation and repair attempts.
+        if self.client is None:
+            factory = self.sdk_factory
+            # defer the optional dependency until live generation is requested.
+            if factory is None:
+                from portkey_ai import Portkey
+                factory = Portkey
+            self.client = factory(base_url=self.base_url, api_key=self.api_key,
+                                  timeout=self.timeout_s, max_retries=0)
+            # Portkey 2.3.4 resets retries on its nested chat client.
+            self.client.openai_client.max_retries = 0
+        return self.client
+
+    # retry only an explicit unsupported-temperature client error.
+    @staticmethod
+    def _temperature_rejected(error):
+        status = getattr(error, "status_code", None)
+        # SDK HTTP errors normally expose both status_code and response.
+        if status is None:
+            status = getattr(getattr(error, "response", None), "status_code", None)
+        message = str(error).lower()
+        unsupported = re.search(r"unsupported|not supported|does not support|not allowed|not permitted|only.{0,40}default", message)
+        # auth, server, and transport failures must not trigger a parameter retry.
+        return ("temperature" in message and
+                ((status in (400, 422) and bool(unsupported)) or
+                 (isinstance(error, TypeError) and "unexpected keyword" in message)))
+
+    # generate text with the lab's interface and one logged parameter retry.
+    def generate(self, prompt, system_prompt=None, temperature=0.0, max_tokens=16000, *, seed=None):
+        messages = []
+        # include the optional system prompt exactly as supplied.
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        kwargs = {"model": self.model, "messages": messages,
+                  "max_tokens": max_tokens, "stream": False, "timeout": self.timeout_s}
+        # remember model compatibility across later calls in the same notebook.
+        if self.use_temperature:
+            kwargs["temperature"] = temperature
+        # limit fallback to one retry and log each actual SDK attempt separately.
+        for attempt in range(2):
+            request_id = uuid.uuid4().hex
+            self.last_request_id = request_id
+            parameters = {key: value for key, value in kwargs.items() if key != "messages"}
+            self.logger.log_event("prompt", request_id=request_id, source="portkey_sdk", mode="live",
+                                  messages=messages, parameters=parameters, base_url=self.base_url,
+                                  timeout_s=self.timeout_s, simulation_seed=seed,
+                                  sdk_max_retries=0, parameter_attempt=attempt + 1)
+            # retain failed requests and responses before any fallback or parsing.
+            try:
+                # missing credentials are an error, never a switch to replay.
+                if not self.is_available():
+                    raise ValueError("Set PORTKEY_API_KEY before requesting live generation")
+                response = self._get_client().chat.completions.create(**kwargs)
+                raw = response.model_dump_json()
+                self.logger.log_event("output", request_id=request_id, source="portkey_sdk",
+                                      live_api_call=True, raw_format="sdk_model_dump_json", raw=raw)
+                choice = response.choices[0]
+                # reject incomplete or refused model output after saving it.
+                if getattr(choice, "finish_reason", None) not in (None, "stop", "end_turn"):
+                    raise ValueError("Generation did not finish normally; see the logged response")
+                output_text = choice.message.content
+                if not isinstance(output_text, str) or not output_text.strip():
+                    raise ValueError("Generation returned no text; see the logged response")
+                return output_text
+            except Exception as error:
+                error_response = getattr(error, "response", None)
+                raw_error = getattr(error_response, "text", None)
+                # preserve structured SDK error bodies when no HTTP text exists.
+                if raw_error is None and getattr(error, "body", None) is not None:
+                    raw_error = json.dumps(error.body)
+                if raw_error is not None:
+                    self.logger.log_event("output", request_id=request_id, source="portkey_sdk",
+                                          live_api_call=True, raw_format="http_error",
+                                          status_code=getattr(error, "status_code", None), raw=raw_error)
+                retry = attempt == 0 and "temperature" in kwargs and self._temperature_rejected(error)
+                event = self.logger.log_event("error", request_id=request_id,
+                                              error_type=type(error).__name__, message=str(error),
+                                              retry_without_temperature=retry)
+                # omit temperature once and keep it omitted for subsequent calls.
+                if retry:
+                    self.use_temperature = False
+                    kwargs.pop("temperature")
+                    continue
+                raise RuntimeError(f"Portkey request failed: {event['message']}") from None
+
+
+# keep recorded replay explicit; all live SDK calls pass through LLMClient.
 def request_generation(prompt, logger, mode="replay", replay_path=None, model=None,
-                       temperature=0.0, seed=4313, timeout_s=120, transport=None):
-    model = model or os.environ.get("PORTKEY_MODEL") or DEFAULT_MODEL
+                       temperature=0.0, seed=4313, timeout_s=120, client=None):
+    # share a client across repair attempts to retain its temperature preference.
+    if mode == "live":
+        client = client or LLMClient(model=model, logger=logger, timeout_s=timeout_s)
+        # prevent a caller from accidentally placing responses in another run's log.
+        if client.logger is not logger:
+            raise ValueError("The client and request must use the same AI logger")
+        output_text = client.generate(prompt, system_prompt=SYSTEM_MESSAGE,
+                                      temperature=temperature, max_tokens=16000, seed=seed)
+        # link schema failures to the already logged model response.
+        try:
+            return parse_response(output_text)
+        except Exception as error:
+            logger.log_event("error", request_id=client.last_request_id,
+                             error_type=type(error).__name__, message=str(error))
+            raise
     messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": prompt}]
-    parameters = {"model": model if mode == "live" else None,
-                  "temperature": temperature, "simulation_seed": seed,
-                  "timeout_s": timeout_s, "max_tokens": 16000, "stream": False}
-    source = ("recorded_response" if replay_path else "recorded_codex_generation") if mode == "replay" else "portkey"
+    source = "recorded_response" if replay_path else "recorded_codex_generation"
     request_id = uuid.uuid4().hex
     logger.log_event("prompt", request_id=request_id, source=source, mode=mode,
-                     messages=messages, parameters=parameters)
-    # record all errors, including missing credentials and malformed output.
+                     messages=messages, parameters={"simulation_seed": seed, "model": None})
+    # log replay failures without importing the SDK or contacting the gateway.
     try:
-        # validate bounds before any external operation.
-        if mode not in ("replay", "live") or not 0 < timeout_s <= 300:
+        if mode != "replay" or not 0 < timeout_s <= 300:
             raise ValueError("Use replay/live and a timeout in (0, 300] seconds")
-        # replay a recorded model response without pretending to call the gateway.
-        if mode == "replay":
-            path = Path(replay_path) if replay_path else logger.root / "ai_logs/bao/bootstrap/response.json"
-            original_request = path.with_name("request.json")
-            # refuse to replay a transcript against a changed prompt.
-            if original_request.is_file():
-                original = json.loads(original_request.read_text())
-                # retain provenance without relabeling the original producer.
-                if original["messages"] != messages:
-                    raise ValueError("Replay prompt differs from the recorded request; select live generation")
-            output_text = path.read_text()
-            logger.log_event("output", request_id=request_id, source=source,
-                             live_api_call=False, replay_path=str(path),
-                             response_sha256=file_hash(path), raw=output_text)
-        # send a bounded request using the same gateway interface as the lab.
-        else:
-            key = os.environ.get("PORTKEY_API_KEY")
-            # fail explicitly instead of substituting synthetic output.
-            if not key:
-                raise ValueError("Set PORTKEY_API_KEY for live generation; replay is a separate mode")
-            # load requests only when an actual HTTP call is needed.
-            if transport is None:
-                import requests
-                transport = requests.post
-            base_url = os.environ.get("PORTKEY_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
-            payload = {"model": model, "messages": messages, "temperature": temperature,
-                       "max_tokens": 16000, "stream": False}
-            response = transport(base_url + "/chat/completions", json=payload,
-                                 headers={"x-portkey-api-key": key, "Content-Type": "application/json"},
-                                 timeout=timeout_s)
-            logger.log_event("output", request_id=request_id, source=source,
-                             live_api_call=True, status_code=response.status_code, raw=response.text)
-            # retain error bodies in the log before rejecting HTTP failures.
-            if not 200 <= response.status_code < 300:
-                raise RuntimeError(f"Portkey HTTP {response.status_code}; see the logged response")
-            envelope = json.loads(response.text)
-            output_text = envelope["choices"][0]["message"]["content"]
-            # reject truncation rather than attempting to use partial source.
-            if envelope["choices"][0].get("finish_reason") not in (None, "stop", "end_turn"):
-                raise ValueError("Generation did not finish normally; see the logged response")
+        path = Path(replay_path) if replay_path else logger.root / "ai_logs/bao/bootstrap/response.json"
+        original_request = path.with_name("request.json")
+        # refuse to replay a transcript against a changed prompt.
+        if original_request.is_file():
+            original = json.loads(original_request.read_text())
+            if original["messages"] != messages:
+                raise ValueError("Replay prompt differs from the recorded request; select live generation")
+        output_text = path.read_text()
+        logger.log_event("output", request_id=request_id, source=source,
+                         live_api_call=False, replay_path=str(path),
+                         response_sha256=file_hash(path), raw=output_text)
         return parse_response(output_text)
     except Exception as error:
         logger.log_event("error", request_id=request_id, error_type=type(error).__name__, message=str(error))

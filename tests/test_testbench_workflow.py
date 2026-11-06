@@ -1,4 +1,5 @@
 # exercise logging, generation validation, and the recovered-core simulation flow.
+import importlib.util
 import json
 import os
 import re
@@ -38,12 +39,31 @@ def source_artifacts():
     }
 
 
-# wrap model text using the OpenAI-compatible response envelope.
-def model_response(content, status=200):
+# model the Portkey SDK response and its raw JSON audit representation.
+def model_response(content):
+    payload = {"choices": [{"message": {"content": content}}]}
     return types.SimpleNamespace(
-        status_code=status,
-        text=json.dumps({"choices": [{"message": {"content": content}}]}),
+        choices=[types.SimpleNamespace(message=types.SimpleNamespace(content=content))],
+        model_dump_json=lambda: json.dumps(payload),
     )
+
+
+# expose provider diagnostics without importing the optional SDK during tests.
+def provider_error(message, status):
+    error = RuntimeError(message)
+    error.status_code = status
+    error.response = types.SimpleNamespace(status_code=status, text=message)
+    return error
+
+
+# inject a lazy SDK factory while retaining each completion call for assertions.
+def sdk_fixture(*, response=None, side_effect=None):
+    completion = mock.Mock(return_value=response, side_effect=side_effect)
+    sdk = types.SimpleNamespace(
+        chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=completion)),
+        openai_client=types.SimpleNamespace(max_retries=1),
+    )
+    return mock.Mock(return_value=sdk), completion
 
 
 # verify audit events and API failures without contacting a model provider.
@@ -83,16 +103,17 @@ class GenerationTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 workflow.parse_response(text)
 
-    # confirm replay records the supplied prompt and source response without HTTP.
+    # confirm replay records the supplied prompt and source response without the SDK.
     def test_replay_logs_prompt_and_output(self):
         expected = artifact_fields()
         path = self.replay_file(json.dumps(expected))
-        transport = mock.Mock(side_effect=AssertionError("replay used HTTP"))
+        client = mock.Mock()
+        client.generate.side_effect = AssertionError("replay called the model")
         actual = workflow.request_generation(
-            "replay prompt", self.logger, replay_path=path, transport=transport
+            "replay prompt", self.logger, replay_path=path, client=client
         )
         self.assertEqual(actual, expected)
-        transport.assert_not_called()
+        client.generate.assert_not_called()
         events = self.events()
         kinds = [event["kind"] for event in events]
         self.assertLess(kinds.index("prompt"), kinds.index("output"))
@@ -114,63 +135,85 @@ class GenerationTests(unittest.TestCase):
 
     # preserve the prompt and error when the selected replay artifact is missing.
     def test_missing_replay_does_not_fall_back(self):
-        transport = mock.Mock(side_effect=AssertionError("missing replay used HTTP"))
+        client = mock.Mock()
+        client.generate.side_effect = AssertionError("missing replay called the model")
         with self.assertRaises(FileNotFoundError):
             workflow.request_generation(
                 "missing replay", self.logger, replay_path=self.root / "absent.json",
-                transport=transport,
+                client=client,
             )
-        transport.assert_not_called()
+        client.generate.assert_not_called()
         kinds = [event["kind"] for event in self.events()]
         self.assertIn("prompt", kinds)
         self.assertIn("error", kinds)
         self.assertNotIn("output", kinds)
 
-    # keep malformed HTTP content before attempting to decode its response envelope.
-    def test_malformed_http_json_is_logged_before_decode(self):
-        response = types.SimpleNamespace(status_code=200, text="malformed HTTP envelope")
-        transport = mock.Mock(return_value=response)
-        with mock.patch.dict(os.environ, {"PORTKEY_API_KEY": "unit-test-secret"}):
-            with self.assertRaises(ValueError):
-                workflow.request_generation(
-                    "bad HTTP JSON", self.logger, mode="live", transport=transport
-                )
+    # retain the raw SDK envelope before rejecting an absent completion choice.
+    def test_malformed_sdk_response_is_logged_before_validation(self):
+        response = types.SimpleNamespace(
+            choices=[], model_dump_json=lambda: '{"choices": [], "id": "malformed-envelope"}'
+        )
+        factory, completion = sdk_fixture(response=response)
+        client = workflow.LLMClient(
+            api_key="unit-test-secret", logger=self.logger, sdk_factory=factory
+        )
+        with self.assertRaises((ValueError, RuntimeError, IndexError)):
+            workflow.request_generation("bad envelope", self.logger, mode="live", client=client)
+        completion.assert_called_once()
         events = self.events()
         kinds = [event["kind"] for event in events]
         self.assertLess(kinds.index("output"), kinds.index("error"))
-        self.assertIn("malformed HTTP envelope", json.dumps(events))
+        self.assertIn("malformed-envelope", json.dumps(events))
 
     # report absent credentials rather than silently falling back to replay.
     def test_live_requires_credentials_and_logs_the_failure(self):
-        transport = mock.Mock(side_effect=AssertionError("unauthorized HTTP call"))
+        factory = mock.Mock(side_effect=AssertionError("unauthorized SDK initialization"))
         with mock.patch.dict(os.environ, {}, clear=True):
+            client = workflow.LLMClient(logger=self.logger, sdk_factory=factory)
+            self.assertFalse(client.is_available())
             with self.assertRaises((ValueError, RuntimeError)):
                 workflow.request_generation(
-                    "live prompt", self.logger, mode="live", transport=transport
+                    "live prompt", self.logger, mode="live", client=client
                 )
-        transport.assert_not_called()
+        factory.assert_not_called()
         kinds = [event["kind"] for event in self.events()]
         self.assertIn("prompt", kinds)
         self.assertIn("error", kinds)
         self.assertNotIn("output", kinds)
 
-    # verify finite network timeouts and log exact model output without credentials.
-    def test_live_success_logs_output_and_omits_authorization(self):
+    # initialize the SDK lazily with bounded requests and reuse the lab-style client.
+    def test_live_success_logs_output_and_configures_sdk(self):
         secret = "unit-test-only-portkey-secret"
         expected = artifact_fields()
         response = model_response(json.dumps(expected))
-        transport = mock.Mock(return_value=response)
-        environment = {"PORTKEY_API_KEY": secret, "PORTKEY_MODEL": "test-model"}
+        factory, completion = sdk_fixture(response=response)
+        environment = {
+            "PORTKEY_API_KEY": secret, "PORTKEY_MODEL": "test-model",
+            "PORTKEY_BASE_URL": "https://gateway.example.invalid/v1",
+        }
         with mock.patch.dict(os.environ, environment):
+            client = workflow.LLMClient(logger=self.logger, timeout_s=9, sdk_factory=factory)
+            self.assertTrue(client.is_available())
+            factory.assert_not_called()
             actual = workflow.request_generation(
                 "live prompt", self.logger, mode="live", seed=4313,
-                timeout_s=9, transport=transport,
+                client=client,
             )
         self.assertEqual(actual, expected)
-        transport.assert_called_once()
-        arguments = transport.call_args.kwargs
+        factory.assert_called_once_with(
+            base_url=environment["PORTKEY_BASE_URL"], api_key=secret, timeout=9, max_retries=0
+        )
+        completion.assert_called_once()
+        arguments = completion.call_args.kwargs
+        self.assertEqual(arguments["model"], "test-model")
+        self.assertEqual(arguments["temperature"], 0.0)
+        self.assertEqual(arguments["max_tokens"], 16000)
         self.assertEqual(arguments["timeout"], 9)
-        self.assertEqual(arguments["json"]["model"], "test-model")
+        self.assertEqual(client.client.openai_client.max_retries, 0)
+        self.assertEqual(arguments["messages"], [
+            {"role": "system", "content": workflow.SYSTEM_MESSAGE},
+            {"role": "user", "content": "live prompt"},
+        ])
         serialized = json.dumps(self.events())
         self.assertIn("live prompt", serialized)
         self.assertIn("operations fixture", serialized)
@@ -178,26 +221,29 @@ class GenerationTests(unittest.TestCase):
 
     # log both raw output and the schema error when an API response is malformed.
     def test_invalid_live_content_is_not_silently_repaired(self):
-        transport = mock.Mock(return_value=model_response("not an artifact JSON object"))
-        with mock.patch.dict(os.environ, {"PORTKEY_API_KEY": "unit-test-secret"}):
-            with self.assertRaises(ValueError):
-                workflow.request_generation(
-                    "invalid live response", self.logger, mode="live", transport=transport
-                )
+        factory, _ = sdk_fixture(response=model_response("not an artifact JSON object"))
+        client = workflow.LLMClient(
+            api_key="unit-test-secret", logger=self.logger, sdk_factory=factory
+        )
+        with self.assertRaises(ValueError):
+            workflow.request_generation(
+                "invalid live response", self.logger, mode="live", client=client
+            )
         kinds = [event["kind"] for event in self.events()]
         self.assertLess(kinds.index("prompt"), kinds.index("output"))
         self.assertLess(kinds.index("output"), kinds.index("error"))
         self.assertIn("not an artifact JSON object", json.dumps(self.events()))
 
-    # record transport exceptions while redacting any echoed API key.
+    # redact an explicit key even when it was never placed in the environment.
     def test_transport_failure_is_logged_and_redacted(self):
         secret = "unit-test-secret-echoed-by-transport"
-        transport = mock.Mock(side_effect=TimeoutError(f"timeout for {secret}"))
-        with mock.patch.dict(os.environ, {"PORTKEY_API_KEY": secret}):
-            with self.assertRaises((TimeoutError, RuntimeError)):
-                workflow.request_generation(
-                    "timeout prompt", self.logger, mode="live", transport=transport
-                )
+        factory, completion = sdk_fixture(side_effect=TimeoutError(f"timeout for {secret}"))
+        client = workflow.LLMClient(api_key=secret, logger=self.logger, sdk_factory=factory)
+        with self.assertRaises((TimeoutError, RuntimeError)):
+            workflow.request_generation(
+                "timeout prompt", self.logger, mode="live", client=client
+            )
+        completion.assert_called_once()
         serialized = json.dumps(self.events())
         self.assertIn("timeout prompt", serialized)
         self.assertIn("error", serialized)
@@ -206,18 +252,139 @@ class GenerationTests(unittest.TestCase):
     # retain HTTP error bodies and redact credentials even in provider diagnostics.
     def test_http_error_body_is_logged_without_secrets(self):
         secret = "unit-test-secret-in-provider-error"
-        response = types.SimpleNamespace(status_code=503, text=f"unavailable: {secret}")
-        transport = mock.Mock(return_value=response)
-        with mock.patch.dict(os.environ, {"PORTKEY_API_KEY": secret}):
-            with self.assertRaises(RuntimeError):
-                workflow.request_generation(
-                    "HTTP failure", self.logger, mode="live", transport=transport
-                )
+        factory, completion = sdk_fixture(
+            side_effect=provider_error(f"unavailable: {secret}", 503)
+        )
+        client = workflow.LLMClient(api_key=secret, logger=self.logger, sdk_factory=factory)
+        with self.assertRaises(RuntimeError):
+            workflow.request_generation("HTTP failure", self.logger, mode="live", client=client)
+        completion.assert_called_once()
         events = self.events()
         kinds = [event["kind"] for event in events]
         self.assertLess(kinds.index("output"), kinds.index("error"))
         self.assertIn("unavailable", json.dumps(events))
         self.assertNotIn(secret, json.dumps(events))
+
+    # preserve explicit generation controls and redact keys in prompt and output.
+    def test_direct_generate_uses_lab_interface_and_redacts_explicit_key(self):
+        secret = "explicit-key-not-in-environment"
+        factory, completion = sdk_fixture(response=model_response(f"answer echoed {secret}"))
+        with mock.patch.dict(os.environ, {}, clear=True):
+            client = workflow.LLMClient(
+                api_key=secret, model="explicit-model", logger=self.logger, sdk_factory=factory
+            )
+            output = client.generate(
+                f"prompt containing {secret}", system_prompt="system fixture",
+                temperature=0.25, max_tokens=2345,
+            )
+        self.assertEqual(output, f"answer echoed {secret}")
+        factory.assert_called_once_with(
+            base_url=workflow.DEFAULT_BASE_URL, api_key=secret, timeout=120, max_retries=0
+        )
+        self.assertEqual(completion.call_args.kwargs, {
+            "model": "explicit-model", "max_tokens": 2345, "temperature": 0.25,
+            "stream": False, "timeout": 120,
+            "messages": [
+                {"role": "system", "content": "system fixture"},
+                {"role": "user", "content": f"prompt containing {secret}"},
+            ],
+        })
+        self.assertNotIn(secret, json.dumps(self.events()))
+
+    # log the rejected request and one compatibility retry, then reuse that decision.
+    def test_unsupported_temperature_retries_once_and_persists(self):
+        factory, completion = sdk_fixture(side_effect=[
+            provider_error("temperature is not supported for this model", 400),
+            model_response("first answer"), model_response("second answer"),
+        ])
+        client = workflow.LLMClient(
+            api_key="unit-test-secret", logger=self.logger, sdk_factory=factory
+        )
+        self.assertEqual(client.generate("first prompt"), "first answer")
+        self.assertEqual(client.generate("second prompt"), "second answer")
+        factory.assert_called_once()
+        self.assertEqual(completion.call_count, 3)
+        self.assertIn("temperature", completion.call_args_list[0].kwargs)
+        self.assertNotIn("temperature", completion.call_args_list[1].kwargs)
+        self.assertNotIn("temperature", completion.call_args_list[2].kwargs)
+        self.assertFalse(client.use_temperature)
+        events = self.events()
+        kinds = [event["kind"] for event in events]
+        self.assertEqual(kinds.count("prompt"), 3)
+        self.assertEqual(kinds.count("output"), 3)
+        self.assertEqual(kinds.count("error"), 1)
+        self.assertLess(kinds.index("output"), kinds.index("error"))
+        # each response or failure must reference the request that produced it.
+        request_ids = {event["request_id"] for event in events if event["kind"] == "prompt"}
+        self.assertEqual(len(request_ids), 3)
+        # ensure no retry response is attributed to another request.
+        for event in events:
+            # inspect audit records associated with SDK outcomes.
+            if event["kind"] in {"output", "error"}:
+                self.assertIn(event["request_id"], request_ids)
+
+    # retry an explicitly unsupported SDK keyword without adding a system message.
+    def test_unsupported_temperature_keyword_retries_once(self):
+        factory, completion = sdk_fixture(side_effect=[
+            TypeError("create() got an unexpected keyword argument 'temperature'"),
+            model_response("answer"),
+        ])
+        with mock.patch.dict(os.environ, {}, clear=True):
+            client = workflow.LLMClient(
+                api_key="unit-test-secret", logger=self.logger, sdk_factory=factory
+            )
+            self.assertEqual(client.generate("plain prompt"), "answer")
+        self.assertEqual(completion.call_count, 2)
+        self.assertEqual(completion.call_args.kwargs["model"], workflow.DEFAULT_MODEL)
+        self.assertEqual(completion.call_args.kwargs["messages"], [
+            {"role": "user", "content": "plain prompt"}
+        ])
+        self.assertNotIn("temperature", completion.call_args.kwargs)
+
+    # a failed compatibility retry must propagate without issuing a third request.
+    def test_temperature_retry_is_bounded(self):
+        factory, completion = sdk_fixture(side_effect=[
+            provider_error("temperature is not supported", 422),
+            provider_error("temperature is not supported", 422),
+        ])
+        client = workflow.LLMClient(
+            api_key="unit-test-secret", logger=self.logger, sdk_factory=factory
+        )
+        with self.assertRaises(RuntimeError):
+            client.generate("retry limit")
+        self.assertEqual(completion.call_count, 2)
+        kinds = [event["kind"] for event in self.events()]
+        self.assertEqual(kinds.count("prompt"), 2)
+        self.assertEqual(kinds.count("error"), 2)
+
+    # mentioning temperature alone must not retry transport, auth, or server faults.
+    def test_unrelated_errors_never_retry(self):
+        errors = [
+            TimeoutError("temperature request timed out"),
+            provider_error("temperature is not supported: unauthorized", 401),
+            provider_error("temperature is not supported: unavailable", 503),
+            provider_error("temperature request has invalid credentials", 400),
+        ]
+        # exercise each failure independently with a fresh compatibility decision.
+        for error in errors:
+            with self.subTest(error=str(error)):
+                factory, completion = sdk_fixture(side_effect=error)
+                client = workflow.LLMClient(
+                    api_key="unit-test-secret", logger=self.logger, sdk_factory=factory
+                )
+                with self.assertRaises((TimeoutError, RuntimeError)):
+                    client.generate("no automatic retry")
+                completion.assert_called_once()
+                self.assertTrue(client.use_temperature)
+
+    # reject unsupported providers and unbounded timeouts before touching the SDK.
+    def test_invalid_client_configuration_is_rejected(self):
+        cases = [{"provider": "other"}, {"timeout_s": 0}, {"timeout_s": -1},
+                 {"timeout_s": float("inf")}, {"timeout_s": float("nan")}]
+        # reject each invalid setting before any request can be issued.
+        for options in cases:
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                workflow.LLMClient(api_key="unit-test-secret", logger=self.logger, **options)
 
     # prevent explicitly named runs from overwriting previous audit records.
     def test_existing_run_id_cannot_overwrite_a_log(self):
@@ -226,6 +393,100 @@ class GenerationTests(unittest.TestCase):
         with self.assertRaises((FileExistsError, ValueError)):
             workflow.AILogger(self.root, run_id="test-run")
         self.assertEqual((self.logger.run_dir / "events.jsonl").read_bytes(), original)
+
+
+# exercise real SDK transport wiring without making network requests.
+@unittest.skipUnless(
+    importlib.util.find_spec("portkey_ai") and importlib.util.find_spec("httpx"),
+    "optional Portkey SDK dependencies are not installed",
+)
+class SDKTransportTests(unittest.TestCase):
+    # isolate request audit records from tracked repository files.
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.logger = workflow.AILogger(Path(self.temporary.name), run_id="sdk-transport")
+
+    # supply a real SDK over an entirely local HTTP transport.
+    def client_for(self, handler, timeout_s):
+        import httpx
+        from portkey_ai import Portkey
+        transport = httpx.Client(transport=httpx.MockTransport(handler))
+        self.addCleanup(transport.close)
+
+        # pass the test transport through the SDK's public constructor.
+        def factory(**kwargs):
+            return Portkey(http_client=transport, **kwargs)
+
+        return workflow.LLMClient(
+            api_key="synthetic-test-key", model="sdk-test-model", logger=self.logger,
+            timeout_s=timeout_s, sdk_factory=factory,
+        )
+
+    # prove hidden nested retries are disabled and all HTTP waits are bounded.
+    def test_server_error_makes_one_request_with_configured_timeouts(self):
+        import httpx
+        requests = []
+
+        # fail locally even when the provider's diagnostic mentions temperature.
+        def handler(request):
+            requests.append(request)
+            return httpx.Response(503, json={"error": {
+                "message": "temperature is not supported: gateway unavailable",
+                "type": "server_error",
+            }})
+
+        client = self.client_for(handler, timeout_s=7)
+        with self.assertRaises(RuntimeError):
+            client.generate("offline server failure")
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(client.client.openai_client.max_retries, 0)
+        self.assertEqual(requests[0].extensions["timeout"], {
+            "connect": 7, "read": 7, "write": 7, "pool": 7,
+        })
+        events = [json.loads(line) for line in self.logger.events_path.read_text().splitlines()]
+        self.assertEqual([event["kind"] for event in events], ["prompt", "output", "error"])
+        self.assertEqual(events[1]["status_code"], 503)
+
+    # retain the real SDK's error and typed completion around one parameter retry.
+    def test_temperature_retry_logs_both_real_sdk_responses(self):
+        import httpx
+        requests = []
+
+        # reject temperature once, then return a typed chat completion.
+        def handler(request):
+            requests.append(request)
+            # model an explicit unsupported-parameter response from the gateway.
+            if len(requests) == 1:
+                return httpx.Response(400, json={"error": {
+                    "message": "temperature is not supported for this model",
+                    "type": "invalid_request_error", "param": "temperature",
+                }})
+            return httpx.Response(200, json={
+                "id": "offline-completion", "object": "chat.completion", "created": 0,
+                "model": "sdk-test-model", "choices": [{
+                    "index": 0, "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": "offline answer"},
+                }],
+            })
+
+        client = self.client_for(handler, timeout_s=5)
+        self.assertEqual(client.generate("offline compatibility"), "offline answer")
+        self.assertEqual(len(requests), 2)
+        self.assertIn("temperature", json.loads(requests[0].content))
+        self.assertNotIn("temperature", json.loads(requests[1].content))
+        # assert that the retry retains every timeout rather than relying on SDK defaults.
+        for request in requests:
+            self.assertEqual(request.extensions["timeout"], {
+                "connect": 5, "read": 5, "write": 5, "pool": 5,
+            })
+        events = [json.loads(line) for line in self.logger.events_path.read_text().splitlines()]
+        self.assertEqual([event["kind"] for event in events], [
+            "prompt", "output", "error", "prompt", "output",
+        ])
+        self.assertEqual(events[1]["status_code"], 400)
+        self.assertIn("offline-completion", events[-1]["raw"])
+        self.assertIn("offline answer", events[-1]["raw"])
 
 
 # validate notebook presentation and the source context supplied to generation.
@@ -249,7 +510,7 @@ class NotebookTests(unittest.TestCase):
 
     # a failed later request must not reuse an earlier attempt's model response.
     def test_bounded_repair_uses_only_current_attempt_feedback(self):
-        notebook_path = next((ROOT / "notebooks").glob("*.ipynb"))
+        notebook_path = ROOT / "tb/LLM_Aided_SPI_Testbench_Generation.ipynb"
         notebook = json.loads(notebook_path.read_text())
         source = next(
             "".join(cell["source"]) for cell in notebook["cells"]
@@ -258,15 +519,18 @@ class NotebookTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             logger = workflow.AILogger(directory)
-            transport = mock.Mock(side_effect=[
+            factory, completion = sdk_fixture(side_effect=[
                 model_response(json.dumps(artifact_fields())),
                 TimeoutError("second attempt has no response"),
                 TimeoutError("third attempt has no response"),
             ])
+            client = workflow.LLMClient(
+                api_key="unit-test-secret", logger=logger, sdk_factory=factory
+            )
             # use real request/error logging while suppressing all network access.
             def ask_ai(prompt):
                 return workflow.request_generation(
-                    prompt, logger, mode="live", transport=transport
+                    prompt, logger, mode="live", client=client
                 )
             repair = mock.Mock(return_value="bounded repair prompt")
             namespace = {
@@ -276,10 +540,10 @@ class NotebookTests(unittest.TestCase):
                 "write_artifacts": workflow.write_artifacts, "repair_prompt": repair,
             }
             # the first invalid source and two request failures must exhaust exactly three attempts.
-            with mock.patch.dict(os.environ, {"PORTKEY_API_KEY": "unit-test-secret"}):
-                with self.assertRaises(RuntimeError):
-                    exec(compile(source, str(notebook_path), "exec"), namespace)
-            self.assertEqual(transport.call_count, 3)
+            with self.assertRaises(RuntimeError):
+                exec(compile(source, str(notebook_path), "exec"), namespace)
+            self.assertEqual(completion.call_count, 3)
+            factory.assert_called_once()
             self.assertEqual(repair.call_count, 2)
             self.assertEqual(repair.call_args_list[0].args[1], artifact_fields())
             current_feedback = repair.call_args_list[1].args[1]
@@ -289,7 +553,8 @@ class NotebookTests(unittest.TestCase):
     # allow heading-only Markdown cells and executable code cells in every notebook.
     def test_notebook_markdown_contains_only_headings(self):
         notebooks = sorted(ROOT.rglob("*.ipynb"))
-        self.assertTrue(notebooks, "the generated workflow notebook is missing")
+        self.assertIn(ROOT / "tb/LLM_Aided_SPI_Testbench_Generation.ipynb", notebooks)
+        self.assertFalse((ROOT / "notebooks/Bao_Nguyen-LLM_Aided_SPI_Testbench_Generation.ipynb").exists())
         # inspect every saved cell; explanatory prose belongs in code comments or outputs.
         for path in notebooks:
             notebook = json.loads(path.read_text())

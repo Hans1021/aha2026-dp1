@@ -1,0 +1,248 @@
+# AI-aided reusable SPI testbench workflow
+
+Open [the notebook](../tb/llm_aided_spi_tb_generation.ipynb)
+and run its cells in order. Its Markdown cells contain headings only; explanations
+appear in code comments, model-response output, and saved artifacts.
+
+## Independent driver target
+
+The notebook defaults to `AHA_TEST_TARGET=tb_driver`. It generates or replays an
+AI-generated mock, then exercises the existing SPI driver against that peripheral.
+It needs Icarus Verilog and `vvp`, but no recovered RTL or iCE40 cell models.
+Its output is labeled **DRIVER TEST**. A mock pass establishes the tested serial
+harness behavior; it cannot establish that the recovered cryptographic circuit works.
+
+The mock returns configured MISO words independently of MOSI. The scoreboard
+checks received words, captured MOSI, and frame counts. A separate passive
+monitor reconstructs MOSI from the wires and requires exactly 32 rising SCK edges
+under each uninterrupted CS assertion. Directed asymmetric patterns expose bit
+ordering errors; seeded patterns add reproducible trials. Readout explicitly
+transmits MOSI, and deselected clocks must not shift the input register.
+
+The mock's START/BUSY delay is an arbitrary test fixture rule, not a measurement
+of recovered hardware. Both targets reuse `spi_operations.svh`, whose pulse task
+owns SCK. The mock registers MISO on the rising edge; the driver samples after NBA
+updates, and a separate 1 ns settling delay follows CS release before checking
+frame telemetry. The mock has simulation-only framing state and is not a
+synthesis input.
+
+Run either target without Jupyter from the repository root:
+
+```bash
+make tb_driver
+make tb_recovered
+```
+
+The Make targets use the checked-in sources. The notebook additionally supports
+generating a new mock through Portkey, with its prompt and response logged.
+Select `AHA_TEST_TARGET=crypto_tb` before starting the kernel for the recovered-DUT
+workflow. It retains the supplied application vectors and processing sequence;
+the mock is never linked into that target. Results identify their `test_kind`
+and `target` so driver checks remain distinguishable from recovered-DUT checks.
+
+## Setup and generation modes
+
+Install the notebook dependencies in your preferred Python environment:
+
+```bash
+python -m pip install -r requirements-notebook.txt
+jupyter lab tb/llm_aided_spi_tb_generation.ipynb
+```
+
+The workflow discovers the installed OSS CAD Suite at
+`~/.local/opt/oss-cad-suite`. Set `OSS_CAD_SUITE` to another suite location if
+needed. `ICE40_CELLS_SIM` can override the location of Yosys's actual iCE40 cell
+models for the recovered target. That target uses `recovery/recovered_sim.v`;
+its bytes are checked before and after simulation.
+
+The notebook has two explicit modes:
+
+- **`replay` (default):** load the recorded Codex-generated mock from
+  `ai_logs/tb/driver_bootstrap/response.json`. The recovered target instead loads
+  `ai_logs/tb/bootstrap/response.json`. Materialize and test the selected sources.
+  This needs no API key and is not a simulated API call.
+  The rendered prompt must match the recorded request; source/prompt edits require
+  a fresh generation rather than silently reusing stale output.
+- **`live`:** set `AHA_GENERATION_MODE=live` and `PORTKEY_API_KEY` in the kernel's
+  environment. The workflow sends requests to the same NYU Portkey gateway used
+  by the lab. `PORTKEY_BASE_URL` and `PORTKEY_MODEL` override the gateway/model.
+  The retained lab default is `@vertexai/anthropic.claude-opus-5-5`; availability
+  depends on the gateway account. This change does not verify a live gateway call
+  because no key was configured in the development session.
+
+The live path follows the lab's `LLMClient` interface: `generate()` sends messages
+through `Portkey` from `portkey_ai`, using `client.chat.completions.create()`, and
+returns the response text. `is_available()` checks whether a key is configured;
+it does not test gateway access. The notebook reuses this client across generation
+and repair attempts. Response JSON is validated locally before use.
+
+If the gateway explicitly rejects the `temperature` parameter, the client retries
+once without it and omits it on later requests. Other errors propagate without
+this retry. SDK automatic retries are disabled so every client attempt is logged.
+The dependency is pinned to the validated `portkey-ai` version 2.3.4.
+
+Each notebook run creates fresh `results/simulation/<run-id>/tb_driver/` or
+`results/simulation/<run-id>/attempt-NN/` directories. Compiler commands, source
+files, scheduling explanations, compiler and simulator output, result JSON, and
+`waveforms.vcd` remain available per attempt. Generated build/waveform directories
+are ignored by Git. Open the VCD
+path printed by the notebook in GTKWave. Driver runs require a fresh output
+directory, preventing a prior run's waveform from becoming new evidence.
+
+## Prompt and response logging
+
+The notebook's mock requests use [`scripts/driver_workflow.py`](../scripts/driver_workflow.py),
+and recovered requests use `ask_ai()` and
+[`scripts/testbench_workflow.py`](../scripts/testbench_workflow.py). Both use the
+same logged `LLMClient`. Every attempt
+appends its full system/user messages **before** requesting a response, then
+appends the complete SDK-serialized response **before** extracting or validating
+the generated artifacts. HTTP errors retain their response body. Requests that
+fail, invalid JSON, repair attempts, and any retry without `temperature` remain in
+the same transcript:
+
+```text
+ai_logs/tb/
+├── driver_bootstrap/
+│   ├── request.json
+│   └── response.json
+├── bootstrap/
+│   ├── initial_request.json
+│   ├── initial_response.json
+│   ├── request.json
+│   └── response.json
+└── runs/<run-id>/events.jsonl
+```
+
+The notebook constructs `AILogger(ROOT, source_dir=ROOT / "tb")`. The logger uses
+the source directory's name for its subfolder: `tb/` writes to `ai_logs/tb/`, and
+`scripts/` would write to `ai_logs/scripts/`. Source directories must exist inside
+the checkout. Repository-relative paths are also accepted, so routing does not
+depend on the kernel's working directory. Default replay artifacts are resolved
+under that source folder's `bootstrap/` or `driver_bootstrap/` directory.
+
+Run IDs prevent overwriting earlier logs. Events record timestamps, source
+fingerprints, request settings, validation results, and simulation observations.
+Credentials and authorization headers are excluded; configured credential values
+are redacted if an error or response echoes them. Logs are intentionally not
+ignored by Git so useful experiment transcripts can be committed.
+
+The bootstrap files record actual generation requests and structured response
+artifacts from the Codex session that created this workflow. They are not Portkey
+API transcripts or a complete export of the surrounding chat. The initial request
+contained a proposed CS/mode mapping; real simulation corrected it. The revised
+request uses the validated mapping, and the original request/response are retained.
+Future notebook calls automatically capture their complete API messages and
+serialized response or error outputs through the logger.
+
+The earlier `ai_logs/bao/` directory was moved to `ai_logs/tb/`. Existing transcript
+bytes are preserved, including any historical paths recorded in those events.
+New runs and notebook outputs use the source-based location.
+
+Recovered-DUT live validation gets at most three generation attempts. Each failed
+attempt feeds bounded compiler/simulator diagnostics and the previous candidate
+back to the model. Mock generation uses one attempt and stops on failure, preserving its
+diagnostics. The loop never changes the recovered DUT or supplied expected values.
+Replay has one attempt and never falls back to a live request. Each SDK call has a
+120-second timeout, including the possible single retry without `temperature`.
+Compile/simulate subprocesses each have a 30-second wall-clock bound, and the
+recovered testbench has a 100 ms simulation watchdog. The driver test has a
+separate 20 ms simulation watchdog.
+
+## Reusable operations and scheduling
+
+The checked-in AI-generated files are:
+
+- [`tb/spi_operations.svh`](../tb/spi_operations.svh): interface initialization,
+  synchronous reset, 32-bit transfers, START, fixed-count or bounded completion,
+  explicit full-duplex readout, and X/Z-safe checking tasks.
+- [`tb/crypto_dut.sv`](../tb/crypto_dut.sv): named interface wrapper around the
+  unchanged recovered design.
+- [`tb/crypto_tb.sv`](../tb/crypto_tb.sv): exact application replay followed by
+  optional seeded SPI echo trials.
+- [`tb/spi_mock_peripheral.sv`](../tb/spi_mock_peripheral.sv): generated serial
+  fixture with independent response configuration and framing telemetry.
+- [`tb/tb_driver.sv`](../tb/tb_driver.sv): driver tests with a passive wire monitor
+  and known-value scoreboard expectations.
+
+Only `sck_pulse` changes SCK after time-zero initialization. All stimulus is
+sequential. Controls and MOSI change while SCK is low, then remain stable for
+10 microseconds before the rising edge. The task samples MISO/BUSY one nanosecond
+after that edge, allowing the recovered registered MISO and nonblocking state
+updates to settle. The remaining high phase is 9,999 ns, preserving a 20 us period.
+The task returns with SCK low; no free-running clock or interrupt process competes
+with it. Readout clocks still transmit the specified MOSI word.
+
+The completed checks validate this pin mapping:
+
+| Signal | Recovered port |
+| --- | --- |
+| SCK | `pin_36` |
+| RST_N | `pin_34` |
+| MOSI | `pin_32` |
+| MISO | `pin_31` |
+| NORM_CS_N | `pin_28` |
+| START | `pin_27` |
+| ENC_DEC | `pin_25` |
+| BUSY | `pin_38` |
+| ICE_LED | `pin_23` |
+
+This mapping is supported by recovered connectivity and the passing supplied
+transactions; the RP2040 GPIO numbers in the application are a different numbering
+scheme. No standard AES behavior or key-loading protocol is inferred.
+
+## Driver validation
+
+At seed 4313, `tb_driver` passes 75 named checks across 14 frames and 457 SCK
+pulses. Six directed words and eight seeded words exercise both serial directions.
+VCD inspection independently verifies the rising-edge count. Regression runs also
+verify repeatable seed-zero stimulus and the maximum unsigned 32-bit seed.
+
+Eleven deliberate fault scenarios exit nonzero: reversed TX/RX, short/long/split
+CS frames, a scoreboard mismatch, X/Z comparisons, X/Z MISO, and a completion
+timeout. Tests require the expected diagnostic, not a later watchdog or fallback
+failure. Missing waveforms fail; reused output directories are rejected without
+altering prior evidence. A separate notebook regression runs every default code
+cell in a checkout with no `recovery/` directory and no iCE40 models.
+
+These results validate the driver against its mock contract only.
+
+## Recovered-DUT measurements
+
+With seed 4313 and eight extra SPI echo trials, the real recovered-core simulation
+passes 24 named checks over 708 SCK pulses. The application portion remains exactly
+180 pulses. Independent VCD inspection counts the actual rising edges and checks
+them against the simulator's summary. Random trials use an explicit 32-bit LCG;
+the same seed produces the same transmitted words. This fixes stimulus
+reproducibility, not the output of future live model requests.
+
+Both encryption and decryption observe BUSY high at `e0`, `e1`, and `e2`, then
+low at `e3` through `e7`. Here `e0` is the START rising edge. The replay retains all
+seven following pulses and passes the supplied plaintext/ciphertext comparisons.
+The exact internal result-load edge and earliest valid readout have not yet been
+measured. The earlier transaction specification's pending-measurement note describes
+its original snapshot; these are the subsequent measurements from this workflow.
+
+Run the regression suite from the repository root:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The tests exercise actual recovered-core transactions and seeded echoes, then
+check failure paths for incorrect expected ciphertext, unknown BUSY/MISO/data,
+matching unknown expectations, stuck-BUSY timeout, missing waveforms, and invalid
+summaries. Gateway tests use SDK fixtures to verify logging, parameter retries,
+and errors without claiming successful live generation. No generated Python
+oracle is executed, and no coverage percentage is claimed.
+
+## Lab and paper references
+
+This adapts the bounded generation, measured-feedback, and artifact-preservation
+workflow from the supplied lab notebook
+`Bao_Nguyen-bln7876-Enhanced_LLM_Aided_Testbench_Generation.ipynb`, the lab report
+`Bao_Nguyen-CoverageGuided_TestbenchGen_report.pdf` (pages 1–2 and 4–6), and
+`LLM_Aided_Testbench_Generation_and_Bug_Detection_for_FSM.pdf` (workflow figures and
+sections III–IV). Their example instructions and DUT assumptions were treated as
+reference material. In particular, the lab's combinational scheduling and generated
+oracle approach were not used for this recovered sequential core.

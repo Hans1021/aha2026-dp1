@@ -1,0 +1,35 @@
+{
+  "timestamp_utc": "2026-11-13T15:16:19.865481+00:00",
+  "repository": "aha2026-dp1",
+  "all_pass": true,
+  "cases": [
+    {
+      "label": "clean_core.normal",
+      "pass": true
+    },
+    {
+      "label": "functionality.normal",
+      "pass": true
+    },
+    {
+      "label": "functionality.attack",
+      "pass": true
+    },
+    {
+      "label": "dos.normal",
+      "pass": true
+    },
+    {
+      "label": "dos.attack",
+      "pass": true
+    },
+    {
+      "label": "performance.normal",
+      "pass": true
+    },
+    {
+      "label": "performance.attack",
+      "pass": true
+    }
+  ]
+}

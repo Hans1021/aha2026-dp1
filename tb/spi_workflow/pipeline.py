@@ -38,7 +38,7 @@ def verify_inputs(root, hashes, notebook_hash):
     if any(not (root / name).is_file() or file_hash(root / name) != digest
            for name, digest in hashes.items()):
         raise RuntimeError("Source inputs changed during this run")
-    if notebook_code_hash(root / "notebooks/spi_tb_generation.ipynb") != notebook_hash:
+    if notebook_code_hash(root / "notebooks/spi_tb_gen.ipynb") != notebook_hash:
         raise RuntimeError("Notebook code changed during this run")
 
 
@@ -64,7 +64,7 @@ def run_workflow(root, logger, client, *, target="tb_driver", seed=4313,
     run_dir = root / "results/simulation" / logger.run_id
     run_dir.mkdir(parents=True, exist_ok=False)
     source_hashes = input_hashes(root, target)
-    notebook_hash = notebook_code_hash(root / "notebooks/spi_tb_generation.ipynb")
+    notebook_hash = notebook_code_hash(root / "notebooks/spi_tb_gen.ipynb")
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True,
                               text=True, check=True, timeout=10).stdout.strip()
     logger.log_event("context", source_sha256=source_hashes,

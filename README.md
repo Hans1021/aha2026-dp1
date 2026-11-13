@@ -171,11 +171,36 @@ no reset between operations):
 | --- | --- | --- | --- | --- | --- | --- |
 | BUSY high (SCK cycles) | 3 | 3 | 3 | **11** | 3 | 3 |
 
+### Waveforms
+
+Timing diagrams rendered from the simulation VCDs (Section 7 of
+`notebooks/trojan_verification.ipynb`, saved under `docs/waveforms/`) show each
+payload directly.
+
+**Functionality — the payload inverts MISO.** In the transaction after the
+trigger, the output `MISO` is the exact bitwise complement of the core's internal
+`orig_miso`:
+
+![Functionality Trojan waveform: MISO is the inverse of orig_miso while the payload is active](docs/waveforms/functionality.png)
+
+**Denial of service — BUSY and ICE_LED latched high.** The complete trigger word
+latches `trigger`, `BUSY` and `ICE_LED` high; they persist even while SCK is
+stopped and clear only on reset:
+
+![DoS Trojan waveform: BUSY and ICE_LED latch high at the trigger, persist with no clock, and drop on reset](docs/waveforms/dos.png)
+
+**Performance — BUSY extended on the 4th operation.** The core's `orig_busy` ends
+at cycle 3 while the externally visible `BUSY` is held to cycle 11, with `ext_cnt`
+counting the 8-cycle extension:
+
+![Performance Trojan waveform: external BUSY held for 8 extra SCK cycles beyond the core on the 4th START](docs/waveforms/performance.png)
+
 ### Summary
 
 All seven verification cases pass: one clean-core reference, three normal-operation
 checks, and three trigger/payload checks. The captured simulation transcripts and
-a machine-readable summary are stored under `results/trojan_verification/`.
+a machine-readable summary are stored under `results/trojan_verification/`, and the
+annotated waveforms above under `docs/waveforms/`.
 
 ## 6. Evaluation Against the Qualifier Rubric
 
@@ -185,7 +210,7 @@ a machine-readable summary are stored under `results/trojan_verification/`.
 | **Trojan quality** | 25 | Three distinct trigger/payload mechanisms, original datapath preservation, and directed simulation evidence |
 | **System automation** | 15 | Automated generation, RTL extraction, logging, compilation, and scripted verification |
 | **Documentation and reproducibility** | 15 | Reverse-engineering analysis (Section 2), readable-RTL reconstruction, notebook workflows, versioned Trojan RTL, complete AI transcripts, and verification evidence |
-| **Exploitation simulation** | 10 | Directed Icarus Verilog simulations drive each Trojan over SPI (`notebooks/trojan_verification.ipynb`, `tb/trojan_verification/`): normal encrypt/decrypt preserved, every documented trigger activates its payload, one-bit-off near-miss words do not, and the DoS variant recovers on reset; transcripts in `results/trojan_verification/` (Section 5) |
+| **Exploitation simulation** | 10 | Directed Icarus Verilog simulations drive each Trojan over SPI (`notebooks/trojan_verification.ipynb`, `tb/trojan_verification/`): normal encrypt/decrypt preserved, every documented trigger activates its payload, one-bit-off near-miss words do not, and the DoS variant recovers on reset; proven with text assertions and annotated waveforms (`docs/waveforms/`, Section 5) |
 
 ## 7. Submission
 

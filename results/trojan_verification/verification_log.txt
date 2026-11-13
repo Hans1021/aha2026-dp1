@@ -1,203 +1,248 @@
 ===== clean_core.normal: PASS =====
-VCD info: dumpfile baseline.vcd opened for output.
-PASS enc.reset busy=0
-PASS enc.echo value=59c359c3
-PROCESS encrypt edge=0 busy=1
-PASS encrypt.started busy=1
-PROCESS encrypt edge=1 busy=1
-PROCESS encrypt edge=2 busy=1
-PROCESS encrypt edge=3 busy=0
-PROCESS encrypt edge=4 busy=0
-PROCESS encrypt edge=5 busy=0
-PROCESS encrypt edge=6 busy=0
-PROCESS encrypt edge=7 busy=0
-PASS encrypt.complete busy=0
-PASS enc.result value=9cd84392
-PASS dec.reset busy=0
-PROCESS decrypt edge=0 busy=1
-PROCESS decrypt edge=1 busy=1
-PROCESS decrypt edge=2 busy=1
-PROCESS decrypt edge=3 busy=0
-PROCESS decrypt edge=4 busy=0
-PROCESS decrypt edge=5 busy=0
-PROCESS decrypt edge=6 busy=0
-PROCESS decrypt edge=7 busy=0
-PASS decrypt.complete busy=0
-PASS dec.result value=59c359c3
-BASELINE SUMMARY PASS checks=8 total_pulses=180
-tb/trojan_verification/baseline_tb.sv:55: $finish called at 3600175000 (1ps)
+PASS enc_reset busy=0
+PROCESS enc_start edge=0 busy=1
+PASS enc_start.started busy=1
+PROCESS enc_wait edge=1 busy=1
+PROCESS enc_wait edge=2 busy=1
+PROCESS enc_wait edge=3 busy=0
+PROCESS enc_wait edge=4 busy=0
+PROCESS enc_wait edge=5 busy=0
+PROCESS enc_wait edge=6 busy=0
+PROCESS enc_wait edge=7 busy=0
+PASS enc_wait.complete busy=0
+PASS enc_check value=9cd84392
+PASS dec_reset busy=0
+PROCESS dec_start edge=0 busy=1
+PASS dec_start.started busy=1
+PROCESS dec_wait edge=1 busy=1
+PROCESS dec_wait edge=2 busy=1
+PROCESS dec_wait edge=3 busy=0
+PROCESS dec_wait edge=4 busy=0
+PROCESS dec_wait edge=5 busy=0
+PROCESS dec_wait edge=6 busy=0
+PROCESS dec_wait edge=7 busy=0
+PASS dec_wait.complete busy=0
+PASS dec_check value=59c359c3
+BASELINE SUMMARY PASS - Checks: 8, Total Pulses: 148
+tb/trojan_verification/baseline_tb.sv:60: $finish called at 2960142 (1ps)
 
 
 ===== functionality.normal: PASS =====
-VCD info: dumpfile baseline.vcd opened for output.
-PASS enc.reset busy=0
-PASS enc.echo value=59c359c3
-PROCESS encrypt edge=0 busy=1
-PASS encrypt.started busy=1
-PROCESS encrypt edge=1 busy=1
-PROCESS encrypt edge=2 busy=1
-PROCESS encrypt edge=3 busy=0
-PROCESS encrypt edge=4 busy=0
-PROCESS encrypt edge=5 busy=0
-PROCESS encrypt edge=6 busy=0
-PROCESS encrypt edge=7 busy=0
-PASS encrypt.complete busy=0
-PASS enc.result value=9cd84392
-PASS dec.reset busy=0
-PROCESS decrypt edge=0 busy=1
-PROCESS decrypt edge=1 busy=1
-PROCESS decrypt edge=2 busy=1
-PROCESS decrypt edge=3 busy=0
-PROCESS decrypt edge=4 busy=0
-PROCESS decrypt edge=5 busy=0
-PROCESS decrypt edge=6 busy=0
-PROCESS decrypt edge=7 busy=0
-PASS decrypt.complete busy=0
-PASS dec.result value=59c359c3
-BASELINE SUMMARY PASS checks=8 total_pulses=180
-tb/trojan_verification/baseline_tb.sv:55: $finish called at 3600175000 (1ps)
+PASS enc_reset busy=0
+PROCESS enc_start edge=0 busy=1
+PASS enc_start.started busy=1
+PROCESS enc_wait edge=1 busy=1
+PROCESS enc_wait edge=2 busy=1
+PROCESS enc_wait edge=3 busy=0
+PROCESS enc_wait edge=4 busy=0
+PROCESS enc_wait edge=5 busy=0
+PROCESS enc_wait edge=6 busy=0
+PROCESS enc_wait edge=7 busy=0
+PASS enc_wait.complete busy=0
+PASS enc_check value=9cd84392
+PASS dec_reset busy=0
+PROCESS dec_start edge=0 busy=1
+PASS dec_start.started busy=1
+PROCESS dec_wait edge=1 busy=1
+PROCESS dec_wait edge=2 busy=1
+PROCESS dec_wait edge=3 busy=0
+PROCESS dec_wait edge=4 busy=0
+PROCESS dec_wait edge=5 busy=0
+PROCESS dec_wait edge=6 busy=0
+PROCESS dec_wait edge=7 busy=0
+PASS dec_wait.complete busy=0
+PASS dec_check value=59c359c3
+BASELINE SUMMARY PASS - Checks: 8, Total Pulses: 148
+tb/trojan_verification/baseline_tb.sv:60: $finish called at 2960142 (1ps)
 
 
 ===== functionality.attack: PASS =====
-VCD info: dumpfile functionality.vcd opened for output.
-PASS func.reset busy=0
-PASS func.trigger.echo_normal value=11111111
-PASS func.payload.inverted value=590fc3a6
-FUNC trigger=a6f03c59 payload_echo=590fc3a6 expected_inverted=590fc3a6
-PASS func.after.normal value=deadbeef
-PASS func.nt.reset busy=0
-PASS func.nt.word.echo value=22222222
-PASS func.nt.next.normal value=a6f03c58
-FUNC non_trigger=a6f03c58 next_echo=a6f03c58 expected_normal=a6f03c58
-PASS func.enc.reset busy=0
-PROCESS func.encrypt edge=0 busy=1
-PASS func.encrypt.started busy=1
-PROCESS func.encrypt edge=1 busy=1
-PROCESS func.encrypt edge=2 busy=1
-PROCESS func.encrypt edge=3 busy=0
-PROCESS func.encrypt edge=4 busy=0
-PROCESS func.encrypt edge=5 busy=0
-PROCESS func.encrypt edge=6 busy=0
-PROCESS func.encrypt edge=7 busy=0
-PASS func.encrypt.complete busy=0
-PASS func.enc.result value=9cd84392
-FUNCTIONALITY SUMMARY PASS checks=11 total_pulses=302
-tb/trojan_verification/functionality_tb.sv:73: $finish called at 6040306000 (1ps)
+PASS enc_reset busy=0
+PROCESS enc_start edge=0 busy=1
+PASS enc_start.started busy=1
+PROCESS enc_wait edge=1 busy=1
+PROCESS enc_wait edge=2 busy=1
+PROCESS enc_wait edge=3 busy=0
+PROCESS enc_wait edge=4 busy=0
+PROCESS enc_wait edge=5 busy=0
+PROCESS enc_wait edge=6 busy=0
+PROCESS enc_wait edge=7 busy=0
+PASS enc_wait.complete busy=0
+PASS enc_check value=f74e3bb2
+PASS dec_reset busy=0
+PROCESS dec_start edge=0 busy=1
+PASS dec_start.started busy=1
+PROCESS dec_wait edge=1 busy=1
+PROCESS dec_wait edge=2 busy=1
+PROCESS dec_wait edge=3 busy=0
+PROCESS dec_wait edge=4 busy=0
+PROCESS dec_wait edge=5 busy=0
+PROCESS dec_wait edge=6 busy=0
+PROCESS dec_wait edge=7 busy=0
+PASS dec_wait.complete busy=0
+PASS dec_check value=12345678
+PASS trig_reset busy=0
+PASS trig_prime_echo value=11111111
+PASS trig_inverted_echo value=590fc3a6
+PASS trig_normal_echo value=deadbeef
+PASS miss_reset busy=0
+PASS miss_prime_echo value=11111111
+PASS miss_normal_echo value=a6f03c58
+PASS miss_normal2_echo value=cafebafe
+FUNCTIONALITY SUMMARY PASS - All 16 checks completed successfully in 408 clock pulses.
+tb/trojan_verification/functionality_tb.sv:107: $finish called at 8160412000 (1ps)
 
 
 ===== dos.normal: PASS =====
-VCD info: dumpfile baseline.vcd opened for output.
-PASS enc.reset busy=0
-PASS enc.echo value=59c359c3
-PROCESS encrypt edge=0 busy=1
-PASS encrypt.started busy=1
-PROCESS encrypt edge=1 busy=1
-PROCESS encrypt edge=2 busy=1
-PROCESS encrypt edge=3 busy=0
-PROCESS encrypt edge=4 busy=0
-PROCESS encrypt edge=5 busy=0
-PROCESS encrypt edge=6 busy=0
-PROCESS encrypt edge=7 busy=0
-PASS encrypt.complete busy=0
-PASS enc.result value=9cd84392
-PASS dec.reset busy=0
-PROCESS decrypt edge=0 busy=1
-PROCESS decrypt edge=1 busy=1
-PROCESS decrypt edge=2 busy=1
-PROCESS decrypt edge=3 busy=0
-PROCESS decrypt edge=4 busy=0
-PROCESS decrypt edge=5 busy=0
-PROCESS decrypt edge=6 busy=0
-PROCESS decrypt edge=7 busy=0
-PASS decrypt.complete busy=0
-PASS dec.result value=59c359c3
-BASELINE SUMMARY PASS checks=8 total_pulses=180
-tb/trojan_verification/baseline_tb.sv:55: $finish called at 3600175000 (1ps)
+PASS enc_reset busy=0
+PROCESS enc_start edge=0 busy=1
+PASS enc_start.started busy=1
+PROCESS enc_wait edge=1 busy=1
+PROCESS enc_wait edge=2 busy=1
+PROCESS enc_wait edge=3 busy=0
+PROCESS enc_wait edge=4 busy=0
+PROCESS enc_wait edge=5 busy=0
+PROCESS enc_wait edge=6 busy=0
+PROCESS enc_wait edge=7 busy=0
+PASS enc_wait.complete busy=0
+PASS enc_check value=9cd84392
+PASS dec_reset busy=0
+PROCESS dec_start edge=0 busy=1
+PASS dec_start.started busy=1
+PROCESS dec_wait edge=1 busy=1
+PROCESS dec_wait edge=2 busy=1
+PROCESS dec_wait edge=3 busy=0
+PROCESS dec_wait edge=4 busy=0
+PROCESS dec_wait edge=5 busy=0
+PROCESS dec_wait edge=6 busy=0
+PROCESS dec_wait edge=7 busy=0
+PASS dec_wait.complete busy=0
+PASS dec_check value=59c359c3
+BASELINE SUMMARY PASS - Checks: 8, Total Pulses: 148
+tb/trojan_verification/baseline_tb.sv:60: $finish called at 2960142 (1ps)
 
 
 ===== dos.attack: PASS =====
-VCD info: dumpfile dos.vcd opened for output.
-PASS dos.reset busy=0
-PASS dos.idle busy=0 led=0
-PASS dos.after_trigger busy=1 led=1
-PASS dos.persist.clk0 busy=1 led=1
-PASS dos.persist.clk1 busy=1 led=1
-PASS dos.persist.clk2 busy=1 led=1
-PASS dos.persist.clk3 busy=1 led=1
-PASS dos.persist.clk4 busy=1 led=1
-PASS dos.persist.noclock busy=1 led=1
-PASS dos.recover busy=0
-PASS dos.after_reset busy=0 led=0
-PROCESS dos.encrypt edge=0 busy=1
-PASS dos.encrypt.started busy=1
-PROCESS dos.encrypt edge=1 busy=1
-PROCESS dos.encrypt edge=2 busy=1
-PROCESS dos.encrypt edge=3 busy=0
-PROCESS dos.encrypt edge=4 busy=0
-PROCESS dos.encrypt edge=5 busy=0
-PROCESS dos.encrypt edge=6 busy=0
-PROCESS dos.encrypt edge=7 busy=0
-PASS dos.encrypt.complete busy=0
-PASS dos.enc.result value=9cd84392
-PASS dos.nt.reset busy=0
-PASS dos.nt.after busy=0 led=0
-PASS dos.nt.again busy=0 led=0
-DOS SUMMARY PASS checks=17 total_pulses=179
-tb/trojan_verification/dos_tb.sv:86: $finish called at 3630174000 (1ps)
+PASS reset_enc busy=0
+PROCESS start_enc edge=0 busy=1
+PASS start_enc.started busy=1
+PROCESS clock_enc edge=1 busy=1
+PROCESS clock_enc edge=2 busy=1
+PROCESS clock_enc edge=3 busy=0
+PROCESS clock_enc edge=4 busy=0
+PROCESS clock_enc edge=5 busy=0
+PROCESS clock_enc edge=6 busy=0
+PROCESS clock_enc edge=7 busy=0
+PASS clock_enc.complete busy=0
+PASS check_enc value=70aa949e
+PASS reset_dec busy=0
+PROCESS start_dec edge=0 busy=1
+PASS start_dec.started busy=1
+PROCESS clock_dec edge=1 busy=1
+PROCESS clock_dec edge=2 busy=1
+PROCESS clock_dec edge=3 busy=0
+PROCESS clock_dec edge=4 busy=0
+PROCESS clock_dec edge=5 busy=0
+PROCESS clock_dec edge=6 busy=0
+PROCESS clock_dec edge=7 busy=0
+PASS clock_dec.complete busy=0
+PASS check_dec value=2d00588b
+PASS reset_dos_trigger busy=0
+PASS dos_trigger_busy busy=1
+PASS dos_pulse_1_busy busy=1
+PASS dos_pulse_2_busy busy=1
+PASS dos_noclock_busy busy=1
+PASS reset_recovery busy=0
+PASS recovery_busy_low busy=0
+PROCESS start_recov edge=0 busy=1
+PASS start_recov.started busy=1
+PROCESS clock_recov edge=1 busy=1
+PROCESS clock_recov edge=2 busy=1
+PROCESS clock_recov edge=3 busy=0
+PROCESS clock_recov edge=4 busy=0
+PROCESS clock_recov edge=5 busy=0
+PROCESS clock_recov edge=6 busy=0
+PROCESS clock_recov edge=7 busy=0
+PASS clock_recov.complete busy=0
+PASS check_recov value=e65785e4
+PASS reset_nearmiss busy=0
+PASS nearmiss_busy busy=0
+DOS SUMMARY PASS: All tests passed successfully.
+tb/trojan_verification/dos_tb.sv:115: $finish called at 5840783 (1ps)
 
 
 ===== performance.normal: PASS =====
-VCD info: dumpfile baseline.vcd opened for output.
-PASS enc.reset busy=0
-PASS enc.echo value=59c359c3
-PROCESS encrypt edge=0 busy=1
-PASS encrypt.started busy=1
-PROCESS encrypt edge=1 busy=1
-PROCESS encrypt edge=2 busy=1
-PROCESS encrypt edge=3 busy=0
-PROCESS encrypt edge=4 busy=0
-PROCESS encrypt edge=5 busy=0
-PROCESS encrypt edge=6 busy=0
-PROCESS encrypt edge=7 busy=0
-PASS encrypt.complete busy=0
-PASS enc.result value=9cd84392
-PASS dec.reset busy=0
-PROCESS decrypt edge=0 busy=1
-PROCESS decrypt edge=1 busy=1
-PROCESS decrypt edge=2 busy=1
-PROCESS decrypt edge=3 busy=0
-PROCESS decrypt edge=4 busy=0
-PROCESS decrypt edge=5 busy=0
-PROCESS decrypt edge=6 busy=0
-PROCESS decrypt edge=7 busy=0
-PASS decrypt.complete busy=0
-PASS dec.result value=59c359c3
-BASELINE SUMMARY PASS checks=8 total_pulses=180
-tb/trojan_verification/baseline_tb.sv:55: $finish called at 3600175000 (1ps)
+PASS enc_reset busy=0
+PROCESS enc_start edge=0 busy=1
+PASS enc_start.started busy=1
+PROCESS enc_wait edge=1 busy=1
+PROCESS enc_wait edge=2 busy=1
+PROCESS enc_wait edge=3 busy=0
+PROCESS enc_wait edge=4 busy=0
+PROCESS enc_wait edge=5 busy=0
+PROCESS enc_wait edge=6 busy=0
+PROCESS enc_wait edge=7 busy=0
+PASS enc_wait.complete busy=0
+PASS enc_check value=9cd84392
+PASS dec_reset busy=0
+PROCESS dec_start edge=0 busy=1
+PASS dec_start.started busy=1
+PROCESS dec_wait edge=1 busy=1
+PROCESS dec_wait edge=2 busy=1
+PROCESS dec_wait edge=3 busy=0
+PROCESS dec_wait edge=4 busy=0
+PROCESS dec_wait edge=5 busy=0
+PROCESS dec_wait edge=6 busy=0
+PROCESS dec_wait edge=7 busy=0
+PASS dec_wait.complete busy=0
+PASS dec_check value=59c359c3
+BASELINE SUMMARY PASS - Checks: 8, Total Pulses: 148
+tb/trojan_verification/baseline_tb.sv:60: $finish called at 2960142 (1ps)
 
 
 ===== performance.attack: PASS =====
-VCD info: dumpfile performance.vcd opened for output.
-PASS perf.reset busy=0
-PROCESS perf.op1 edge=0 busy=1
-PASS perf.op1.started busy=1
-PERF perf.op1 busy_high_cycles=3
-PROCESS perf.op2 edge=0 busy=1
-PASS perf.op2.started busy=1
-PERF perf.op2 busy_high_cycles=3
-PROCESS perf.op3 edge=0 busy=1
-PASS perf.op3.started busy=1
-PERF perf.op3 busy_high_cycles=3
-PROCESS perf.op4 edge=0 busy=1
-PASS perf.op4.started busy=1
-PERF perf.op4 busy_high_cycles=11
-PROCESS perf.op5 edge=0 busy=1
-PASS perf.op5.started busy=1
-PERF perf.op5 busy_high_cycles=3
-PROCESS perf.op6 edge=0 busy=1
-PASS perf.op6.started busy=1
-PERF perf.op6 busy_high_cycles=3
-PERF DURATIONS op1..op6 = 3 3 3 11 3 3
-PERF op4 extra cycles = 8
-PERFORMANCE SUMMARY PASS checks=13 total_pulses=418
-tb/trojan_verification/performance_tb.sv:79: $finish called at 8360411000 (1ps)
+PASS rst_a_enc busy=0
+PROCESS start_a_enc edge=0 busy=1
+PASS start_a_enc.started busy=1
+PROCESS clk_a_enc edge=1 busy=1
+PROCESS clk_a_enc edge=2 busy=1
+PROCESS clk_a_enc edge=3 busy=0
+PROCESS clk_a_enc edge=4 busy=0
+PROCESS clk_a_enc edge=5 busy=0
+PROCESS clk_a_enc edge=6 busy=0
+PROCESS clk_a_enc edge=7 busy=0
+PASS clk_a_enc.complete busy=0
+PASS chk_a_enc value=70aa949e
+PASS rst_a_dec busy=0
+PROCESS start_a_dec edge=0 busy=1
+PASS start_a_dec.started busy=1
+PROCESS clk_a_dec edge=1 busy=1
+PROCESS clk_a_dec edge=2 busy=1
+PROCESS clk_a_dec edge=3 busy=0
+PROCESS clk_a_dec edge=4 busy=0
+PROCESS clk_a_dec edge=5 busy=0
+PROCESS clk_a_dec edge=6 busy=0
+PROCESS clk_a_dec edge=7 busy=0
+PASS clk_a_dec.complete busy=0
+PASS chk_a_dec value=2d00588b
+PASS rst_b busy=0
+PROCESS start_b edge=0 busy=1
+PASS start_b.started busy=1
+PASS check_busy_low busy=0
+PROCESS start_b edge=0 busy=1
+PASS start_b.started busy=1
+PASS check_busy_low busy=0
+PROCESS start_b edge=0 busy=1
+PASS start_b.started busy=1
+PASS check_busy_low busy=0
+PROCESS start_b edge=0 busy=1
+PASS start_b.started busy=1
+PASS check_busy_low busy=0
+PROCESS start_b edge=0 busy=1
+PASS start_b.started busy=1
+PASS check_busy_low busy=0
+PROCESS start_b edge=0 busy=1
+PASS start_b.started busy=1
+PASS check_busy_low busy=0
+PERFORMANCE SUMMARY PASS
+tb/trojan_verification/performance_tb.sv:119: $finish called at 11720558 (1ps)

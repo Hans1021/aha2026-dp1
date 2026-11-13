@@ -87,6 +87,10 @@ This approach preserves the recovered datapath while allowing the Trojan to inte
 
 It also provides a consistent way to generate, compile, and compare different Trojan candidates.
 
+### Structural net-tap insertion
+
+The project also includes an automated structural-insertion method as an alternative to the wrapper. Rather than wrapping the core, the model emits a single net-tap module and a Yosys-driven script splices it directly into the recovered netlist: the target net's declaration is renamed, its driver is rerouted into the tap, and the tap drives the original pin, so the core's value reaches the tap unchanged. A transparent tap therefore leaves behaviour identical, which the method uses to validate the splice against the golden vectors before any payload is introduced. The pipeline, the generated tap, and the Yosys validation are driven by `notebooks/trojans/ast_insertion.ipynb` and preserved in `tb/trojan_pipeline/`, `rtl/trojans/ast/net_tap.sv`, and `ai_logs/trojan_pipeline/`. The three Trojans in this submission use the wrapper method above; the net-tap method is an additional insertion capability.
+
 ## 4. Trojan Designs
 
 ### Functionality corruption
@@ -133,6 +137,18 @@ open-source toolchain. For a Trojan, the recovered core is renamed
 `recovered_original` and instantiated beneath the generated `recovered` wrapper,
 so the original datapath is exercised unchanged.
 
+The testbenches in `tb/trojan_verification/` are themselves AI-generated, giving
+the exploits the same provenance as the Trojans. Each is produced by the same
+model and gateway used for Trojan generation
+(`notebooks/trojans/exploit_tb_gen.ipynb`, `tb/trojan_pipeline/exploit.py`): the
+model writes a self-checking testbench from a behaviour specification, the
+testbench is compiled and simulated against the actual Trojan, and any
+compilation or simulation failure is fed back for revision until the testbench
+prints its `SUMMARY PASS`. Every attempt's prompt, response, and simulation log
+is preserved under `ai_logs/exploit_tb/`. The reused SPI driver
+(`spi_operations.svh`) and device wrapper (`crypto_dut.sv`) were generated
+earlier by the spi_tb_gen workflow (`ai_logs/tb/`).
+
 The complete flow is reproducible from `notebooks/trojan_verification.ipynb`,
 which compiles and runs every case and writes evidence to
 `results/trojan_verification/`. Each case passes only when its testbench prints
@@ -144,6 +160,15 @@ Every variant was driven through a full encryption and decryption without
 transmitting any trigger word. All three Trojans, and the clean recovered core
 used as reference, reproduce the supplied golden vectors, confirming that the
 cryptographic datapath is untouched while the Trojan is dormant.
+
+The normal-operation check is carried by the baseline testbench, which asserts
+the supplied golden vectors (`0x59C359C3` encrypts to `0x9CD84392` and back) and
+is run against the clean core and each Trojan device. The three trigger
+testbenches begin with a lighter encrypt/decrypt preamble on model-chosen values
+— and, in the denial-of-service testbench, one that does not independently check
+the result — before exercising their trigger; the authoritative golden-vector
+assertion is therefore the baseline testbench run against each variant, not these
+preambles.
 
 | Design | Encrypt `0x59C359C3` | Decrypt `0x9CD84392` | Result |
 | --- | --- | --- | --- |
@@ -198,22 +223,25 @@ counting the 8-cycle extension:
 ### Summary
 
 All seven verification cases pass: one clean-core reference, three normal-operation
-checks, and three trigger/payload checks. The captured simulation transcripts and
-a machine-readable summary are stored under `results/trojan_verification/`, and the
-annotated waveforms above under `docs/waveforms/`.
+checks driven by the baseline testbench, and three trigger/payload checks. Because
+the testbenches are AI-generated, each is additionally backed by the generation
+transcript and the simulation that gated its acceptance under `ai_logs/exploit_tb/`.
+The captured end-to-end transcripts and a machine-readable summary are stored under
+`results/trojan_verification/`, and the annotated waveforms above under
+`docs/waveforms/`.
 
 ## 6. Evaluation Against the Qualifier Rubric
 
 | Category | Weight | Our approach and evidence |
 | --- | ---: | --- |
-| **Creative use of AI** | 35 | Portkey-based RTL generation, dedicated notebooks per trojan, previous-code context, structured feedback, and iterative AI corrections |
+| **Creative use of AI** | 35 | Portkey-based RTL generation, dedicated notebooks per Trojan, previous-code context, structured feedback and iterative corrections, AI-generated self-checking exploit testbenches, and an automated structural net-tap insertion method |
 | **Trojan quality** | 25 | Three distinct trigger/payload mechanisms, original datapath preservation, and directed simulation evidence |
-| **System automation** | 15 | Automated generation, RTL extraction, logging, compilation, and scripted verification |
-| **Documentation and reproducibility** | 15 | Reverse-engineering analysis (Section 2), readable-RTL reconstruction, notebook workflows, versioned Trojan RTL, complete AI transcripts, and verification evidence |
-| **Exploitation simulation** | 10 | Directed Icarus Verilog simulations drive each Trojan over SPI (`notebooks/trojan_verification.ipynb`, `tb/trojan_verification/`): normal encrypt/decrypt preserved, every documented trigger activates its payload, one-bit-off near-miss words do not, and the DoS variant recovers on reset; proven with text assertions and annotated waveforms (`docs/waveforms/`, Section 5) |
+| **System automation** | 15 | Automated generation, RTL extraction, logging, compilation, and scripted verification, plus an agentic compile–simulate–repair loop that writes and self-verifies the exploit testbenches and a Yosys-driven structural insertion pipeline |
+| **Documentation and reproducibility** | 15 | Reverse-engineering analysis (Section 2), readable-RTL reconstruction, notebook workflows, versioned Trojan RTL, complete AI transcripts for both Trojan and exploit-testbench generation (`ai_logs/`), and reproducible verification evidence |
+| **Exploitation simulation** | 10 | Directed Icarus Verilog simulations drive each Trojan over SPI (`notebooks/trojan_verification.ipynb`, `tb/trojan_verification/`): normal encrypt/decrypt preserved, every documented trigger activates its payload, one-bit-off near-miss words do not, and the DoS variant recovers on reset; proven with text assertions and annotated waveforms (`docs/waveforms/`, Section 5); the testbenches are themselves AI-generated and self-verifying (`ai_logs/exploit_tb/`) |
 
 ## 7. Submission
 
 The project submission format is a ZIP containing `README.md`, `rtl/`, `tb/`, and `ai/`.
 
-The submission will include the recovered RTL, Trojan candidates, exploit testbenches, and complete AI interaction logs, including unsuccessful and intermediate attempts.
+The submission will include the recovered RTL, the Trojan candidates, the AI-generated exploit testbenches, and complete AI interaction logs for both Trojan and testbench generation, including unsuccessful and intermediate attempts.

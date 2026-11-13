@@ -121,7 +121,61 @@ Unlike a complete denial of service, this attack introduces a targeted performan
 
 ## 5. Verification and Results
 
-- Bao TODO
+### Methodology
+
+Each Trojan variant is verified by **directed simulation** against the recovered
+accelerator, rather than compile-checking alone. The harness in
+`tb/trojan_verification/` drives the device over SPI exactly as the RP2040
+reference application does (`inputs/spi_ice40_crypto_ip_test.py`): SPI mode 0,
+MSB-first, 32-bit words, with SCK as the sole system clock. Simulation uses
+Icarus Verilog with the iCE40 primitive models (`cells_sim.v`) from the
+open-source toolchain. For a Trojan, the recovered core is renamed
+`recovered_original` and instantiated beneath the generated `recovered` wrapper,
+so the original datapath is exercised unchanged.
+
+The complete flow is reproducible from `notebooks/trojan_verification.ipynb`,
+which compiles and runs every case and writes evidence to
+`results/trojan_verification/`. Each case passes only when its testbench prints
+`SUMMARY PASS` and no check prints `FAIL`.
+
+### Normal operation preserved
+
+Every variant was driven through a full encryption and decryption without
+transmitting any trigger word. All three Trojans, and the clean recovered core
+used as reference, reproduce the supplied golden vectors, confirming that the
+cryptographic datapath is untouched while the Trojan is dormant.
+
+| Design | Encrypt `0x59C359C3` | Decrypt `0x9CD84392` | Result |
+| --- | --- | --- | --- |
+| Clean recovered core (reference) | `0x9CD84392` | `0x59C359C3` | PASS |
+| Functionality (`attempt_009.sv`) | `0x9CD84392` | `0x59C359C3` | PASS |
+| Denial of service (`attempt_007.sv`) | `0x9CD84392` | `0x59C359C3` | PASS |
+| Performance (`attempt_010.sv`) | `0x9CD84392` | `0x59C359C3` | PASS |
+
+### Trigger and payload activation
+
+For each variant the documented trigger activates the payload, while a
+one-bit-off *near-miss* word does not, demonstrating that the triggers are
+specific and that normal traffic is unaffected.
+
+| Variant | Trigger applied | Observed payload | Near miss | Result |
+| --- | --- | --- | --- | --- |
+| Functionality | SPI word `0xA6F03C59` | MISO of the next transaction inverted (the trigger word read back as `0x590FC3A6` = `~0xA6F03C59`); the following transaction returns to normal (one-shot) | `0xA6F03C58` produces no inversion | PASS |
+| Denial of service | SPI word `0xBAADF00D` | BUSY and ICE_LED latched high; persist across further SCK pulses and with no clock at all; cleared only by synchronous reset, after which the core encrypts correctly again | `0xBAADF00C` never asserts BUSY | PASS |
+| Performance | 4th START after reset | External BUSY held high for 11 SCK cycles versus 3 in normal operation (8 extra cycles); operations 1–3, 5 and 6 measured 3 cycles | operations before the 4th are unaffected | PASS |
+
+Measured BUSY-high duration over six consecutive START operations (single reset,
+no reset between operations):
+
+| Operation | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| BUSY high (SCK cycles) | 3 | 3 | 3 | **11** | 3 | 3 |
+
+### Summary
+
+All seven verification cases pass: one clean-core reference, three normal-operation
+checks, and three trigger/payload checks. The captured simulation transcripts and
+a machine-readable summary are stored under `results/trojan_verification/`.
 
 ## 6. Evaluation Against the Qualifier Rubric
 
@@ -131,7 +185,7 @@ Unlike a complete denial of service, this attack introduces a targeted performan
 | **Trojan quality** | 25 | Three distinct trigger/payload mechanisms, original datapath preservation, and directed simulation evidence |
 | **System automation** | 15 | Automated generation, RTL extraction, logging, compilation, and scripted verification |
 | **Documentation and reproducibility** | 15 | Reverse-engineering analysis (Section 2), readable-RTL reconstruction, notebook workflows, versioned Trojan RTL, complete AI transcripts, and verification evidence |
-| **Exploitation simulation** | 10 | - Bao TODO |
+| **Exploitation simulation** | 10 | Directed Icarus Verilog simulations drive each Trojan over SPI (`notebooks/trojan_verification.ipynb`, `tb/trojan_verification/`): normal encrypt/decrypt preserved, every documented trigger activates its payload, one-bit-off near-miss words do not, and the DoS variant recovers on reset; transcripts in `results/trojan_verification/` (Section 5) |
 
 ## 7. Submission
 

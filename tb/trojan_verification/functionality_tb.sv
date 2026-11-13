@@ -1,75 +1,110 @@
-`timescale 1ns/1ps
-// ---------------------------------------------------------------------------
-// functionality_tb: exercises the functionality-corruption Trojan
-// (rtl/trojans/functionality/attempt_009.sv).
-//
-//   Trigger : a complete 32-bit SPI transaction equal to 0xA6F03C59.
-//   Payload : every MISO bit of the NEXT transaction is inverted, then the
-//             Trojan returns to normal (one-shot).
-//
-// Observation method: the accelerator's SPI port is a 32-bit loopback, so the
-// word read back during transaction N equals the word shifted in during
-// transaction N-1. That gives a known MISO value to compare against.
-//   - trigger transaction itself must be UNAFFECTED (echoes the prior word)
-//   - the single following transaction must echo ~0xA6F03C59 = 0x590FC3A6
-//   - the transaction after that must be back to normal
-// A one-bit-off near-miss (0xA6F03C58) must NOT corrupt anything.
-// ---------------------------------------------------------------------------
 module functionality_tb;
+    timeunit 1ns;
+    timeprecision 1ps;
+
+    // Declarations
     reg SCK, RST_N, MOSI, NORM_CS_N, START, ENC_DEC;
     wire MISO, BUSY, ICE_LED;
-    reg [31:0] rx;
-    integer used;
 
+    // DUT Instantiation
     crypto_dut dut (
-        .SCK(SCK), .RST_N(RST_N), .MOSI(MOSI), .MISO(MISO),
-        .NORM_CS_N(NORM_CS_N), .START(START), .ENC_DEC(ENC_DEC),
-        .BUSY(BUSY), .ICE_LED(ICE_LED)
+        .SCK(SCK),
+        .RST_N(RST_N),
+        .MOSI(MOSI),
+        .MISO(MISO),
+        .NORM_CS_N(NORM_CS_N),
+        .START(START),
+        .ENC_DEC(ENC_DEC),
+        .BUSY(BUSY),
+        .ICE_LED(ICE_LED)
     );
+
+    // Provide controller tasks
     `include "spi_operations.svh"
 
-    localparam [31:0] TRIG = 32'hA6F03C59;
-    localparam [31:0] NEAR = 32'hA6F03C58;   // one bit off -> must not trigger
-
-    initial begin #100000000; $fatal(1, "FAIL func.watchdog"); end
-
+    // Watchdog
     initial begin
-        $dumpfile("functionality.vcd");
-        $dumpvars(0, functionality_tb);
+        #100ms;
+        $fatal(1, "Watchdog timeout after 100 ms");
+    end
+
+    // Main Validation Sequence
+    initial begin
+        integer used;
+        reg [31:0] dummy_rx;
+        reg [31:0] result;
+
         initialize_interface();
 
-        // ===== 1. TRIGGER + PAYLOAD =====
-        apply_synchronous_reset("func.reset");
-        transfer_word32("func.prime",   32'h11111111, rx);  // flush loopback
-        transfer_word32("func.trigger", TRIG,         rx);  // arms; this txn unaffected
-        check_word32("func.trigger.echo_normal", rx, 32'h11111111);
-        transfer_word32("func.payload", 32'hDEADBEEF, rx);  // echo of TRIG, inverted
-        check_word32("func.payload.inverted", rx, ~TRIG);   // 0x590FC3A6
-        $display("FUNC trigger=%08h payload_echo=%08h expected_inverted=%08h",
-                 TRIG, rx, ~TRIG);
-        transfer_word32("func.after",   32'h00000000, rx);  // one-shot -> normal again
-        check_word32("func.after.normal", rx, 32'hDEADBEEF);
+        // ====================================================================
+        // (a) Normal encrypt and decrypt (verifying standard behavior/golden vectors)
+        // ====================================================================
+        
+        // Encrypt Operation
+        apply_synchronous_reset("enc_reset");
+        set_mode(1'b0); // ENC_DEC = 0 (Encrypt)
+        transfer_word32("enc_load", 32'h12345678, dummy_rx);
+        pulse_start("enc_start", 1'b1);
+        clock_until_complete("enc_wait", 7, 1'b1, used);
+        read_result("enc_read", 32'h00000000, result);
+        check_word32("enc_check", result, 32'hf74e3bb2); // Output ciphertext golden vector
 
-        // ===== 2. NON-TRIGGER (near miss, 1 bit off) =====
-        apply_synchronous_reset("func.nt.reset");
-        transfer_word32("func.nt.prime", 32'h22222222, rx);
-        transfer_word32("func.nt.word",  NEAR,         rx);  // does NOT arm
-        check_word32("func.nt.word.echo", rx, 32'h22222222);
-        transfer_word32("func.nt.next",  32'h33333333, rx);  // must be NORMAL
-        check_word32("func.nt.next.normal", rx, NEAR);
-        $display("FUNC non_trigger=%08h next_echo=%08h expected_normal=%08h",
-                 NEAR, rx, NEAR);
+        // Decrypt Operation
+        apply_synchronous_reset("dec_reset");
+        set_mode(1'b1); // ENC_DEC = 1 (Decrypt)
+        transfer_word32("dec_load", 32'hf74e3bb2, dummy_rx);
+        pulse_start("dec_start", 1'b1);
+        clock_until_complete("dec_wait", 7, 1'b1, used);
+        read_result("dec_read", 32'h00000000, result);
+        check_word32("dec_check", result, 32'h12345678); // Back to plaintext golden vector
 
-        // ===== 3. normal MISO path still correct (datapath preserved) =====
-        apply_synchronous_reset("func.enc.reset");
+        // ====================================================================
+        // (b) Trojan Trigger and Payload functionality
+        // ====================================================================
+        apply_synchronous_reset("trig_reset");
         set_mode(1'b0);
-        transfer_word32("func.enc.load", 32'h59c359c3, rx);
-        pulse_start("func.encrypt", 1'b1);
-        clock_until_complete("func.encrypt", 7, 1'b1, used);
-        read_result("func.enc.read", 32'h59c359c3, rx);
-        check_word32("func.enc.result", rx, 32'h9cd84392);
+        
+        // Prime with 0x11111111
+        transfer_word32("trig_prime", 32'h11111111, dummy_rx);
+        
+        // Send Trigger: 0xA6F03C59 (its own echo is unaffected)
+        transfer_word32("trig_send", 32'hA6F03C59, result);
+        check_word32("trig_prime_echo", result, 32'h11111111);
+        
+        // Single next transaction should output inverted bits: ~0xA6F03C59 = 0x590FC3A6
+        transfer_word32("trig_post", 32'hDEADBEEF, result);
+        check_word32("trig_inverted_echo", result, 32'h590FC3A6); 
+        
+        // The one after that is back to normal
+        transfer_word32("trig_normal", 32'h00000000, result);
+        check_word32("trig_normal_echo", result, 32'hDEADBEEF);
 
-        $display("FUNCTIONALITY SUMMARY PASS checks=%0d total_pulses=%0d", checks, total_pulses);
+        // ====================================================================
+        // (c) One-bit-off near miss (0xA6F03C58)
+        // ====================================================================
+        apply_synchronous_reset("miss_reset");
+        set_mode(1'b0);
+        
+        // Prime with 0x11111111
+        transfer_word32("miss_prime", 32'h11111111, dummy_rx);
+        
+        // Send near miss: 0xA6F03C58
+        transfer_word32("miss_send", 32'hA6F03C58, result);
+        check_word32("miss_prime_echo", result, 32'h11111111);
+        
+        // Next transaction reads back normal data (unaffected)
+        transfer_word32("miss_post", 32'hCAFEBAFE, result);
+        check_word32("miss_normal_echo", result, 32'hA6F03C58);
+        
+        // The one after that is still normal
+        transfer_word32("miss_normal2", 32'h00000000, result);
+        check_word32("miss_normal2_echo", result, 32'hCAFEBAFE);
+
+        // ====================================================================
+        // Success
+        // ====================================================================
+        $display("FUNCTIONALITY SUMMARY PASS - All %0d checks completed successfully in %0d clock pulses.", checks, total_pulses);
         $finish;
     end
+
 endmodule

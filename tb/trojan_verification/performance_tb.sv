@@ -1,81 +1,126 @@
-`timescale 1ns/1ps
-// ---------------------------------------------------------------------------
-// performance_tb: exercises the performance-degradation Trojan
-// (rtl/trojans/performance/attempt_010.sv).
-//
-//   Trigger : the 4th START operation after reset.
-//   Payload : externally visible BUSY is held high for 8 additional SCK cycles
-//             after the core finishes; earlier and later operations are normal.
-//
-// Method: issue six consecutive START operations without an intervening reset
-// (so the Trojan's internal START counter advances 1..6) and measure how many
-// SCK cycles BUSY stays high after each START pulse.
-//   normal operation  -> BUSY high for 3 cycles
-//   4th operation      -> BUSY high for 3 + 8 = 11 cycles
-// ---------------------------------------------------------------------------
 module performance_tb;
+
+    // Declarations
     reg SCK, RST_N, MOSI, NORM_CS_N, START, ENC_DEC;
     wire MISO, BUSY, ICE_LED;
-    reg [31:0] rx;
-    reg m, b;
-    integer op, dur;
-    integer dur_hist [1:6];
 
+    // DUT Instantiation
     crypto_dut dut (
-        .SCK(SCK), .RST_N(RST_N), .MOSI(MOSI), .MISO(MISO),
-        .NORM_CS_N(NORM_CS_N), .START(START), .ENC_DEC(ENC_DEC),
-        .BUSY(BUSY), .ICE_LED(ICE_LED)
+        .SCK(SCK),
+        .RST_N(RST_N),
+        .MOSI(MOSI),
+        .MISO(MISO),
+        .NORM_CS_N(NORM_CS_N),
+        .START(START),
+        .ENC_DEC(ENC_DEC),
+        .BUSY(BUSY),
+        .ICE_LED(ICE_LED)
     );
+
+    // Harness Include
     `include "spi_operations.svh"
 
-    // Count SCK pulses from just after the START pulse until BUSY falls.
-    task automatic measure_busy_high(input string name, input integer maxp, output integer d);
-        begin
-            d = 0;
-            while (BUSY === 1'b1 && d < maxp) begin
-                sck_pulse(m, b);
-                d = d + 1;
-            end
-            if (BUSY !== 1'b0) $fatal(1, "FAIL %s busy_never_fell", name);
-            $display("PERF %s busy_high_cycles=%0d", name, d);
-        end
-    endtask
-
-    localparam [31:0] P = 32'h59c359c3;
-
-    initial begin #100000000; $fatal(1, "FAIL perf.watchdog"); end
+    // Local Variables
+    integer used;
+    reg [31:0] rx_data;
+    reg [31:0] result;
+    reg smiso, sbusy;
+    integer count;
+    integer pulses_after_start;
 
     initial begin
-        $dumpfile("performance.vcd");
-        $dumpvars(0, performance_tb);
-        initialize_interface();
+        fork
+            // Watchdog Thread
+            begin
+                #100ms;
+                $fatal(1, "Watchdog timeout - simulation hung");
+            end
 
-        // One reset, then six START operations with no reset between them.
-        apply_synchronous_reset("perf.reset");
-        set_mode(1'b0);
-        for (op = 1; op <= 6; op = op + 1) begin
-            transfer_word32($sformatf("perf.op%0d.load", op), P, rx);
-            pulse_start($sformatf("perf.op%0d", op), 1'b1);
-            measure_busy_high($sformatf("perf.op%0d", op), 64, dur);
-            dur_hist[op] = dur;
-            read_result($sformatf("perf.op%0d.read", op), P, rx);
-        end
+            // Main Test Thread
+            begin
+                initialize_interface();
 
-        // ops 1,2,3,5,6 must be normal (3); op4 must be extended by 8 (11).
-        if (dur_hist[1] != 3) $fatal(1, "FAIL perf.op1 dur=%0d", dur_hist[1]);
-        if (dur_hist[2] != 3) $fatal(1, "FAIL perf.op2 dur=%0d", dur_hist[2]);
-        if (dur_hist[3] != 3) $fatal(1, "FAIL perf.op3 dur=%0d", dur_hist[3]);
-        if (dur_hist[4] != dur_hist[3] + 8)
-            $fatal(1, "FAIL perf.op4 expected %0d got %0d", dur_hist[3] + 8, dur_hist[4]);
-        if (dur_hist[5] != 3) $fatal(1, "FAIL perf.op5 dur=%0d", dur_hist[5]);
-        if (dur_hist[6] != 3) $fatal(1, "FAIL perf.op6 dur=%0d", dur_hist[6]);
+                // -----------------------------------------------------------------
+                // Prove: (a) Normal encrypt/decrypt golden vectors
+                // -----------------------------------------------------------------
+                
+                // Normal Encryption (ENC_DEC = 0)
+                apply_synchronous_reset("rst_a_enc");
+                set_mode(0); 
+                transfer_word32("load_a_enc", 32'h01234567, rx_data);
+                pulse_start("start_a_enc", 1'b1);
+                clock_until_complete("clk_a_enc", 7, 1'b1, used);
+                read_result("read_a_enc", 32'h00000000, result);
+                check_word32("chk_a_enc", result, 32'h70aa949e);
 
-        $display("PERF DURATIONS op1..op6 = %0d %0d %0d %0d %0d %0d",
-                 dur_hist[1], dur_hist[2], dur_hist[3], dur_hist[4], dur_hist[5], dur_hist[6]);
-        $display("PERF op4 extra cycles = %0d", dur_hist[4] - dur_hist[3]);
-        checks = checks + 6;
+                // Normal Decryption (ENC_DEC = 1)
+                apply_synchronous_reset("rst_a_dec");
+                set_mode(1); 
+                transfer_word32("load_a_dec", 32'h89ABCDEF, rx_data);
+                pulse_start("start_a_dec", 1'b1);
+                clock_until_complete("clk_a_dec", 7, 1'b1, used);
+                read_result("read_a_dec", 32'h00000000, result);
+                check_word32("chk_a_dec", result, 32'h2d00588b);
 
-        $display("PERFORMANCE SUMMARY PASS checks=%0d total_pulses=%0d", checks, total_pulses);
+                // -----------------------------------------------------------------
+                // Prove: (b) Performance-degradation Trojan on 4th START
+                // -----------------------------------------------------------------
+                
+                apply_synchronous_reset("rst_b");
+                
+                for (int i = 1; i <= 6; i++) begin
+                    set_mode(0);
+                    transfer_word32("load_b", 32'hAABBCCDD, rx_data);
+                    
+                    // pulse_start consumes 1 cycle, where BUSY goes high
+                    pulse_start("start_b", 1'b1);
+
+                    // Initialize count to 1 because pulse_start already consumed 1 BUSY=1 cycle
+                    count = 1;
+                    pulses_after_start = 0;
+                    
+                    sck_pulse(smiso, sbusy);
+                    pulses_after_start++;
+                    
+                    // Count how many additional cycles BUSY remains high
+                    while (sbusy === 1'b1) begin
+                        count++;
+                        sck_pulse(smiso, sbusy);
+                        pulses_after_start++;
+                    end
+
+                    // Evaluate Trojan payload trigger
+                    if (i == 4) begin
+                        if (count != 11) begin
+                            $fatal(1, "Trojan failed on op 4. Expected count=11 (3+8 extra), got %0d", count);
+                        end
+                    end else begin
+                        if (count != 3) begin
+                            $fatal(1, "Normal op %0d failed. Expected count=3, got %0d", i, count);
+                        end
+                    end
+                    
+                    // Verify BUSY is actually low via check_busy assertion right after the loop
+                    check_busy("check_busy_low", 1'b0);
+
+                    // Pad remaining cycles to reach 7 total after start, matching standard operation
+                    // so the state machine perfectly aligns for the read_result phase
+                    while (pulses_after_start < 7) begin
+                        sck_pulse(smiso, sbusy);
+                        pulses_after_start++;
+                    end
+
+                    // Clear state for next loop iteration
+                    read_result("read_b", 32'h00000000, result);
+                end
+
+                // Conclusion
+                $display("PERFORMANCE SUMMARY PASS");
+                $finish;
+            end
+        join_any
+        
         $finish;
     end
+
 endmodule

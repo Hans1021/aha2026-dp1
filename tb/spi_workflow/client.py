@@ -64,7 +64,7 @@ class LLMClient:
                  (isinstance(error, TypeError) and "unexpected keyword" in message)))
 
     # generate text with the lab's interface and one logged parameter retry.
-    def generate(self, prompt, system_prompt=None, temperature=0.0, max_tokens=16000, *, seed=None, stage="generation"):
+    def generate(self, prompt, system_prompt=None, temperature=0.0, max_tokens=16000, *, seed=None, stage="generation", reasoning_effort="low"):
         messages = []
         # include the optional system prompt exactly as supplied.
         if system_prompt:
@@ -72,8 +72,16 @@ class LLMClient:
         messages.append({"role": "user", "content": normalize_prompt_text(prompt)})
         kwargs = {"model": self.model, "messages": messages,
                   "max_tokens": max_tokens, "stream": False, "timeout": self.timeout_s}
+        # Claude Opus 5.5 reasons by default and its thinking cannot be disabled or
+        # budgeted; at the default effort the reasoning tokens consumed most of
+        # max_tokens and truncated the artifact ("Generation did not finish normally").
+        # Low effort keeps the reasoning small so the full artifact fits the budget.
+        if reasoning_effort:
+            kwargs["reasoning_effort"] = reasoning_effort
         # remember model compatibility across later calls in the same notebook.
-        if self.use_temperature:
+        # Opus 5.5 rejects an explicit temperature unless thinking is adaptive, so
+        # once reasoning effort is constrained the temperature must be omitted.
+        if self.use_temperature and not reasoning_effort:
             kwargs["temperature"] = temperature
         # limit fallback to one retry and log each actual SDK attempt separately.
         for attempt in range(2):

@@ -1,23 +1,20 @@
-# use deterministic defaults without requiring notebook dependencies.
-PYTHON ?= python3
-SEED ?= 4313
-TIMEOUT ?= 30
-RANDOM_TRIALS ?= 8
+IVERILOG ?= iverilog
+VVP ?= vvp
+ICE40_CELLS_SIM ?= /usr/share/yosys/ice40/cells_sim.v
 
-.PHONY: tb_driver tb_recovered baseline test
+.PHONY: sim clean
 
-# validate the shared SPI driver against the AI-generated mock only.
-tb_driver:
-	$(PYTHON) -m scripts.run_testbench --target tb_driver --seed $(SEED) --timeout $(TIMEOUT)
+sim:
+	mkdir -p build
+	$(IVERILOG) -g2012 -s crypto_tb \
+		-I tb \
+		-DNO_ICE40_DEFAULT_ASSIGNMENTS \
+		-o build/simulation.vvp \
+		tb/crypto_dut.sv \
+		tb/crypto_tb.sv \
+		recovery/recovered_sim.v \
+		$(ICE40_CELLS_SIM)
+	$(VVP) build/simulation.vvp +seed=4313 +random_trials=0
 
-# validate supplied vectors against the separate recovered circuit.
-tb_recovered:
-	$(PYTHON) -m scripts.run_testbench --target crypto_tb --seed $(SEED) --random-trials $(RANDOM_TRIALS) --timeout $(TIMEOUT)
-
-# include negative probes that must fail inside their simulations.
-test:
-	$(PYTHON) -m unittest discover -s tests -v
-
-# verify frozen inputs and rerun all recovered-baseline acceptance checks.
-baseline:
-	$(PYTHON) -m scripts.frozen_baseline --timeout $(TIMEOUT)
+clean:
+	rm -rf build

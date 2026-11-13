@@ -10,3 +10,7 @@ results/simulation/
 # keep gateway credentials outside version control.
 .env
 .env.*
+
+# Simulation outputs
+build/
+*.vcd

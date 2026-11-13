@@ -26,6 +26,7 @@ be established, use a copy of the recovered RTL instead.
 ## Progress
 
 ### Completed
+
 - Bitstream recovered using Project IceStorm.
 - Structural and simulation-compatible Verilog generated.
 - FPGA external interface mapped.
@@ -33,6 +34,7 @@ be established, use a copy of the recovered RTL instead.
 - Preliminary AI architecture analysis performed.
 
 ### Remaining
+
 - AI-readable RTL generation.
 - Behavioral equivalence testing.
 - AI-generated Trojan implementation.

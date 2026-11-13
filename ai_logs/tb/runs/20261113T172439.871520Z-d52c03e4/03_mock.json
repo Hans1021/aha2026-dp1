@@ -1,0 +1,153 @@
+{
+  "stage": "mock",
+  "timestamp": "2026-11-13T17:27:33.982796+00:00",
+  "model": "@vertexai/anthropic.claude-opus-5-5",
+  "run_id": "20261113T172439.871520Z-d52c03e4",
+  "request_id": "666fe4562b1f4946a90b3110a3b91bcf",
+  "candidate": {
+    "attempt": 1,
+    "stage": "mock",
+    "target": "tb_driver"
+  },
+  "parameter_attempt": 1,
+  "base_url": "https://ai-gateway.apps.cloud.rt.nyu.edu/v1",
+  "timeout_s": 300,
+  "simulation_seed": 4313,
+  "sdk_max_retries": 0,
+  "source_sha256": {
+    "docs/transaction_specification.md": "f8cd394f183bbe46bfa00d6a5a8b4a073a8ce3b8d3143a727a9e83084735fbc9",
+    "inputs/spi_ice40_crypto_ip_test.py": "1085bf00704592818d918b6022c7af60c40544d34fcd07be74343eca09318a7a",
+    "tb/spi_workflow/__init__.py": "90fb310ce2f03e369f9d780488a058d28fe4617af33411e53152fa8537cd37b8",
+    "tb/spi_workflow/baseline.py": "eafcfb80eca9f473c161d6cf8d8a3292db971608db94b38c872a8880d31d1d62",
+    "tb/spi_workflow/build.py": "779762de9a8b2825f9ab5ca8a59d833e4456544434bd10f408d54b0a4796a9c3",
+    "tb/spi_workflow/cli.py": "46825a2b5e8970d51e6887915d55860299524a94e8d90de358e3c0a5ae3e39f1",
+    "tb/spi_workflow/client.py": "ea14cf5c88965e39685875ae89cbe8463597192ec951d9491d56882f987868f0",
+    "tb/spi_workflow/common.py": "6aea73c30fcee168c7a163cf5775d9b6d5a6c448a2d7e74aecceb4d86bcf3438",
+    "tb/spi_workflow/controllers.py": "479eb347afeb4e5d3396d1fbfb48c5c0751b618fb9e2439aac0c462876872ee4",
+    "tb/spi_workflow/driver.py": "65965a4be9e2d3771cf00a833382a434d965adeb2d21991e2d56aed9f4b5548c",
+    "tb/spi_workflow/generation.py": "e6f901f08354ba1bc7e49f1a55ecf4e05e7632ebe8dd12432cad03e00bf9ce3c",
+    "tb/spi_workflow/harnesses.py": "2fc5a32d6cb44a9f1b8f9b96466d819611225735f62ade3d79ced8f2f031113b",
+    "tb/spi_workflow/logs.py": "2780fdf0059a76cc5aa8eb8fa4f18eacf4cebeb019afffb044996a55be8535e8",
+    "tb/spi_workflow/mock.py": "5196f2e979ea2c4e4fe9e24823a955aabc2f2f0782d6a163325adb6ca840988e",
+    "tb/spi_workflow/pipeline.py": "5cc62646f1aa2a526468dd255898e74313e5f78dc0e84d372e4f6cc4d009413b",
+    "tb/spi_workflow/prompts.py": "2329290a9b5de4688aa7c4a4f096dfd5c59a5234900243058033b7a4c9c04233",
+    "tb/spi_workflow/recovered.py": "a4055e655a153afe2a00e2ad0084fedb1e3d13b7f91cc5f0f8e9660ca7072b01",
+    "tb/spi_workflow/reference.py": "448f6feabe23abc7d7e29aaa299f83831ab98fe7ab9c28ffd75faf2926139c76",
+    "tb/spi_workflow/timing.py": "f1093d02ae4e40cd217442e463984f6035452cd9721a24f39313771ea485782d",
+    "tb/spi_workflow/tools.py": "2a26645d72ee18818d1a868c1d25979dbf47e8376520a636940f47d71f327fac",
+    "tb/spi_workflow/validation.py": "11cb50f4f9213240f82143d83e66c96dbf2eb2347e3fe453e14756f31e3e5f68",
+    "tb/spi_workflow/waveforms.py": "653b793eef8181079c61e122b8ff73c9f68757896f3221bba952d72510df978d",
+    "tb/harnesses/baseline_timing_tb.sv": "19f56ae2a774a5fddd2e70ff700da456094fd8a57a59c005b94ea690f2c7f4a3",
+    "tb/harnesses/spi_harness_controller.sv": "dd7a60b8ae708503cb53d8696d6875b1e8846549bf9671054986bef8fd333e3d",
+    "tb/harnesses/tb_driver.sv": "25394dd8a23f63e91230f4cbc21469ba7f4ec43c9740397c26ad126e7ac55b32"
+  },
+  "notebook_code_sha256": "0557c71b4ab111db802a385baa8b8f68c7ee68889ea2390929c9914bcbd88017",
+  "revision": "208b9b261cc1810356e088ab15a5f46bd8446f92",
+  "context": {
+    "source_sha256": {
+      "docs/transaction_specification.md": "f8cd394f183bbe46bfa00d6a5a8b4a073a8ce3b8d3143a727a9e83084735fbc9",
+      "inputs/spi_ice40_crypto_ip_test.py": "1085bf00704592818d918b6022c7af60c40544d34fcd07be74343eca09318a7a",
+      "tb/spi_workflow/__init__.py": "90fb310ce2f03e369f9d780488a058d28fe4617af33411e53152fa8537cd37b8",
+      "tb/spi_workflow/baseline.py": "eafcfb80eca9f473c161d6cf8d8a3292db971608db94b38c872a8880d31d1d62",
+      "tb/spi_workflow/build.py": "779762de9a8b2825f9ab5ca8a59d833e4456544434bd10f408d54b0a4796a9c3",
+      "tb/spi_workflow/cli.py": "46825a2b5e8970d51e6887915d55860299524a94e8d90de358e3c0a5ae3e39f1",
+      "tb/spi_workflow/client.py": "ea14cf5c88965e39685875ae89cbe8463597192ec951d9491d56882f987868f0",
+      "tb/spi_workflow/common.py": "6aea73c30fcee168c7a163cf5775d9b6d5a6c448a2d7e74aecceb4d86bcf3438",
+      "tb/spi_workflow/controllers.py": "479eb347afeb4e5d3396d1fbfb48c5c0751b618fb9e2439aac0c462876872ee4",
+      "tb/spi_workflow/driver.py": "65965a4be9e2d3771cf00a833382a434d965adeb2d21991e2d56aed9f4b5548c",
+      "tb/spi_workflow/generation.py": "e6f901f08354ba1bc7e49f1a55ecf4e05e7632ebe8dd12432cad03e00bf9ce3c",
+      "tb/spi_workflow/harnesses.py": "2fc5a32d6cb44a9f1b8f9b96466d819611225735f62ade3d79ced8f2f031113b",
+      "tb/spi_workflow/logs.py": "2780fdf0059a76cc5aa8eb8fa4f18eacf4cebeb019afffb044996a55be8535e8",
+      "tb/spi_workflow/mock.py": "5196f2e979ea2c4e4fe9e24823a955aabc2f2f0782d6a163325adb6ca840988e",
+      "tb/spi_workflow/pipeline.py": "5cc62646f1aa2a526468dd255898e74313e5f78dc0e84d372e4f6cc4d009413b",
+      "tb/spi_workflow/prompts.py": "2329290a9b5de4688aa7c4a4f096dfd5c59a5234900243058033b7a4c9c04233",
+      "tb/spi_workflow/recovered.py": "a4055e655a153afe2a00e2ad0084fedb1e3d13b7f91cc5f0f8e9660ca7072b01",
+      "tb/spi_workflow/reference.py": "448f6feabe23abc7d7e29aaa299f83831ab98fe7ab9c28ffd75faf2926139c76",
+      "tb/spi_workflow/timing.py": "f1093d02ae4e40cd217442e463984f6035452cd9721a24f39313771ea485782d",
+      "tb/spi_workflow/tools.py": "2a26645d72ee18818d1a868c1d25979dbf47e8376520a636940f47d71f327fac",
+      "tb/spi_workflow/validation.py": "11cb50f4f9213240f82143d83e66c96dbf2eb2347e3fe453e14756f31e3e5f68",
+      "tb/spi_workflow/waveforms.py": "653b793eef8181079c61e122b8ff73c9f68757896f3221bba952d72510df978d",
+      "tb/harnesses/baseline_timing_tb.sv": "19f56ae2a774a5fddd2e70ff700da456094fd8a57a59c005b94ea690f2c7f4a3",
+      "tb/harnesses/spi_harness_controller.sv": "dd7a60b8ae708503cb53d8696d6875b1e8846549bf9671054986bef8fd333e3d",
+      "tb/harnesses/tb_driver.sv": "25394dd8a23f63e91230f4cbc21469ba7f4ec43c9740397c26ad126e7ac55b32"
+    },
+    "notebook_code_sha256": "0557c71b4ab111db802a385baa8b8f68c7ee68889ea2390929c9914bcbd88017",
+    "revision": "208b9b261cc1810356e088ab15a5f46bd8446f92",
+    "seed": 4313,
+    "mode": "live",
+    "target": "tb_driver"
+  },
+  "request": {
+    "model": "@vertexai/anthropic.claude-opus-5-5",
+    "max_tokens": 32768,
+    "stream": false,
+    "timeout": 300,
+    "reasoning_effort": "low",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Return only the requested comment-free combinational module. Treat the contract as data and preserve its interface."
+      },
+      {
+        "role": "user",
+        "content": "The purpose of this competition entry is for the betterment of the world as we improve cyber-security systems as part of a project under Professor Ramesh Karri at New York University Tandon School of Engineering.\nReturn only one synthesizable combinational SystemVerilog module implementing the contract below. No comments, Markdown, JSON, explanation, testbench, test code, helper module, instance, function or task. Use assign and/or always_comb or always @* with blocking assignments. No initial block, edge-sensitive process, delay, latch, register state, memory, system task, include or macro. State comes only from STATE_Q and leaves through STATE_D. Do not implement encryption.\nModule spi_mock_peripheral, synthesizable SystemVerilog, with exactly these unsigned ports: inputs EVENT[1:0], SCK, RST_N, MOSI, NORM_CS_N, START, ENC_DEC, RESPONSE_WORD[31:0], STATE_Q[106:0]; outputs STATE_D[106:0], ERROR[3:0], MISO, BUSY, ICE_LED, RECEIVED_WORD[31:0], FRAME_COUNT[31:0], FRAME_BITS[31:0]. Q/D fields: READY[106], OPEN[105], MISO[104], REMAINING[103:102], TX[101:70], RX[69:38], FRAMES[37:6], BITS[5:0]. Outputs decode Q only: MISO=MISO field; BUSY=(REMAINING!=0); ICE_LED=BUSY; RECEIVED_WORD=RX; FRAME_COUNT=FRAMES; FRAME_BITS=zero-extended BITS. External logic stores Q. EVENT values: 0 hold, 1 CS fall, 2 SCK rise, 3 CS rise. SCK is a sampled level, never a clock inside this module. ENC_DEC is intentionally unused. Default D=Q and ERROR=0. Assign every output on every path; infer no storage. For EVENT=2, RST_N=0 overrides all checks: zero D except READY=1. Before READY=1 ignore every other event, including startup CS transitions. For ready state, apply the first applicable rule:\n- EVENT=0: hold.\n- EVENT=1: require SCK=0, CS=0, RST_N=1 (ERROR=1 otherwise), OPEN=0 (ERROR=2), START=0 (ERROR=4), REMAINING=0 (ERROR=5). Then set OPEN=1, BITS=0, RX=0 and TX=RESPONSE_WORD; retain other fields.\n- EVENT=2: require SCK=1 (ERROR=1). If CS=0, require OPEN=1 (ERROR=2), BITS<32 (ERROR=3), START=0 (ERROR=4), REMAINING=0 (ERROR=5), then MISO=TX[31], TX=TX<<1, RX=(RX<<1)|MOSI, BITS=BITS+1 in D. If CS=1, require OPEN=0 (ERROR=2). START=1 requires REMAINING=0 (ERROR=4), then sets REMAINING=3. Otherwise decrement nonzero REMAINING. Deselected clocks retain all serial fields.\n- EVENT=3: require SCK=0, CS=1 (ERROR=1), OPEN=1 (ERROR=2), BITS=32 (ERROR=3), then clear OPEN and increment FRAMES modulo 2^32. CS means NORM_CS_N. Any error leaves all of D equal to Q. Check guards in listed order; retain fields not assigned. Reset during a selected frame is outside the driver contract. Three post-START clocks take REMAINING 3,2,1,0. Controls, counters and RX are binary, supplied and checked by the harness. TX and MISO must propagate RESPONSE_WORD X/Z bits for deliberate readout tests; never sanitize them to zero. RESPONSE_WORD is captured only at CS fall and is independent of MOSI. Selected rising events shift exactly one MSB-first bit. Only full 32-event frames increment FRAMES; short, split or overlong frames fail through ERROR. This is a driver mock, not a cryptographic oracle or recovered DUT."
+      }
+    ]
+  },
+  "request_sha256": "1753b59dd7533e42f4ac00c14d21f3b4ed537ad4fa5c90927e69ad317fb59be5",
+  "status": "returned",
+  "response": {
+    "id": "msg_vrtx_011Ch1KYmhM4yyhDCpEzY6pJ",
+    "choices": [
+      {
+        "finish_reason": "end_turn",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "module spi_mock_peripheral(\ninput logic [1:0] EVENT,\ninput logic SCK,\ninput logic RST_N,\ninput logic MOSI,\ninput logic NORM_CS_N,\ninput logic START,\ninput logic ENC_DEC,\ninput logic [31:0] RESPONSE_WORD,\ninput logic [106:0] STATE_Q,\noutput logic [106:0] STATE_D,\noutput logic [3:0] ERROR,\noutput logic MISO,\noutput logic BUSY,\noutput logic ICE_LED,\noutput logic [31:0] RECEIVED_WORD,\noutput logic [31:0] FRAME_COUNT,\noutput logic [31:0] FRAME_BITS\n);\nlogic q_ready, q_open, q_miso;\nlogic [1:0] q_rem;\nlogic [31:0] q_tx, q_rx, q_frames;\nlogic [5:0] q_bits;\nassign q_ready = STATE_Q[106];\nassign q_open = STATE_Q[105];\nassign q_miso = STATE_Q[104];\nassign q_rem = STATE_Q[103:102];\nassign q_tx = STATE_Q[101:70];\nassign q_rx = STATE_Q[69:38];\nassign q_frames = STATE_Q[37:6];\nassign q_bits = STATE_Q[5:0];\nassign MISO = q_miso;\nassign BUSY = (q_rem != 2'd0);\nassign ICE_LED = (q_rem != 2'd0);\nassign RECEIVED_WORD = q_rx;\nassign FRAME_COUNT = q_frames;\nassign FRAME_BITS = {26'd0, q_bits};\nalways_comb begin\nSTATE_D = STATE_Q;\nERROR = 4'd0;\nif (EVENT == 2'd2 && RST_N == 1'b0) begin\nSTATE_D = 107'd0;\nSTATE_D[106] = 1'b1;\nend else if (q_ready == 1'b1) begin\ncase (EVENT)\n2'd1: begin\nif (!(SCK == 1'b0 && NORM_CS_N == 1'b0 && RST_N == 1'b1)) ERROR = 4'd1;\nelse if (q_open != 1'b0) ERROR = 4'd2;\nelse if (START != 1'b0) ERROR = 4'd4;\nelse if (q_rem != 2'd0) ERROR = 4'd5;\nelse begin\nSTATE_D[105] = 1'b1;\nSTATE_D[5:0] = 6'd0;\nSTATE_D[69:38] = 32'd0;\nSTATE_D[101:70] = RESPONSE_WORD;\nend\nend\n2'd2: begin\nif (SCK != 1'b1) ERROR = 4'd1;\nelse if (NORM_CS_N == 1'b0) begin\nif (q_open != 1'b1) ERROR = 4'd2;\nelse if (!(q_bits < 6'd32)) ERROR = 4'd3;\nelse if (START != 1'b0) ERROR = 4'd4;\nelse if (q_rem != 2'd0) ERROR = 4'd5;\nelse begin\nSTATE_D[104] = q_tx[31];\nSTATE_D[101:70] = {q_tx[30:0], 1'b0};\nSTATE_D[69:38] = {q_rx[30:0], MOSI};\nSTATE_D[5:0] = q_bits + 6'd1;\nend\nend else begin\nif (q_open != 1'b0) ERROR = 4'd2;\nelse if (START == 1'b1) begin\nif (q_rem != 2'd0) ERROR = 4'd4;\nelse STATE_D[103:102] = 2'd3;\nend else if (q_rem != 2'd0) begin\nSTATE_D[103:102] = q_rem - 2'd1;\nend\nend\nend\n2'd3: begin\nif (!(SCK == 1'b0 && NORM_CS_N == 1'b1)) ERROR = 4'd1;\nelse if (q_open != 1'b1) ERROR = 4'd2;\nelse if (q_bits != 6'd32) ERROR = 4'd3;\nelse begin\nSTATE_D[105] = 1'b0;\nSTATE_D[37:6] = q_frames + 32'd1;\nend\nend\ndefault: begin\nSTATE_D = STATE_Q;\nend\nendcase\nend\nend\nendmodule",
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": null,
+          "refusal": null,
+          "audio": null,
+          "content_blocks": [
+            {
+              "type": "text",
+              "text": "module spi_mock_peripheral(\ninput logic [1:0] EVENT,\ninput logic SCK,\ninput logic RST_N,\ninput logic MOSI,\ninput logic NORM_CS_N,\ninput logic START,\ninput logic ENC_DEC,\ninput logic [31:0] RESPONSE_WORD,\ninput logic [106:0] STATE_Q,\noutput logic [106:0] STATE_D,\noutput logic [3:0] ERROR,\noutput logic MISO,\noutput logic BUSY,\noutput logic ICE_LED,\noutput logic [31:0] RECEIVED_WORD,\noutput logic [31:0] FRAME_COUNT,\noutput logic [31:0] FRAME_BITS\n);\nlogic q_ready, q_open, q_miso;\nlogic [1:0] q_rem;\nlogic [31:0] q_tx, q_rx, q_frames;\nlogic [5:0] q_bits;\nassign q_ready = STATE_Q[106];\nassign q_open = STATE_Q[105];\nassign q_miso = STATE_Q[104];\nassign q_rem = STATE_Q[103:102];\nassign q_tx = STATE_Q[101:70];\nassign q_rx = STATE_Q[69:38];\nassign q_frames = STATE_Q[37:6];\nassign q_bits = STATE_Q[5:0];\nassign MISO = q_miso;\nassign BUSY = (q_rem != 2'd0);\nassign ICE_LED = (q_rem != 2'd0);\nassign RECEIVED_WORD = q_rx;\nassign FRAME_COUNT = q_frames;\nassign FRAME_BITS = {26'd0, q_bits};\nalways_comb begin\nSTATE_D = STATE_Q;\nERROR = 4'd0;\nif (EVENT == 2'd2 && RST_N == 1'b0) begin\nSTATE_D = 107'd0;\nSTATE_D[106] = 1'b1;\nend else if (q_ready == 1'b1) begin\ncase (EVENT)\n2'd1: begin\nif (!(SCK == 1'b0 && NORM_CS_N == 1'b0 && RST_N == 1'b1)) ERROR = 4'd1;\nelse if (q_open != 1'b0) ERROR = 4'd2;\nelse if (START != 1'b0) ERROR = 4'd4;\nelse if (q_rem != 2'd0) ERROR = 4'd5;\nelse begin\nSTATE_D[105] = 1'b1;\nSTATE_D[5:0] = 6'd0;\nSTATE_D[69:38] = 32'd0;\nSTATE_D[101:70] = RESPONSE_WORD;\nend\nend\n2'd2: begin\nif (SCK != 1'b1) ERROR = 4'd1;\nelse if (NORM_CS_N == 1'b0) begin\nif (q_open != 1'b1) ERROR = 4'd2;\nelse if (!(q_bits < 6'd32)) ERROR = 4'd3;\nelse if (START != 1'b0) ERROR = 4'd4;\nelse if (q_rem != 2'd0) ERROR = 4'd5;\nelse begin\nSTATE_D[104] = q_tx[31];\nSTATE_D[101:70] = {q_tx[30:0], 1'b0};\nSTATE_D[69:38] = {q_rx[30:0], MOSI};\nSTATE_D[5:0] = q_bits + 6'd1;\nend\nend else begin\nif (q_open != 1'b0) ERROR = 4'd2;\nelse if (START == 1'b1) begin\nif (q_rem != 2'd0) ERROR = 4'd4;\nelse STATE_D[103:102] = 2'd3;\nend else if (q_rem != 2'd0) begin\nSTATE_D[103:102] = q_rem - 2'd1;\nend\nend\nend\n2'd3: begin\nif (!(SCK == 1'b0 && NORM_CS_N == 1'b1)) ERROR = 4'd1;\nelse if (q_open != 1'b1) ERROR = 4'd2;\nelse if (q_bits != 6'd32) ERROR = 4'd3;\nelse begin\nSTATE_D[105] = 1'b0;\nSTATE_D[37:6] = q_frames + 32'd1;\nend\nend\ndefault: begin\nSTATE_D = STATE_Q;\nend\nendcase\nend\nend\nendmodule"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1794590865,
+    "model": "claude-opus-5-5",
+    "object": "chat.completion",
+    "system_fingerprint": null,
+    "usage": {
+      "prompt_tokens": 1493,
+      "completion_tokens": 1470,
+      "total_tokens": 2963,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": null,
+        "reasoning_tokens": 0,
+        "rejected_prediction_tokens": null
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": null,
+        "cached_tokens": 0
+      },
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      }
+    },
+    "service_tier": null,
+    "provider": "vertex-ai"
+  },
+  "response_format": "sdk_model_dump_json",
+  "response_sha256": "91a17431901c6159a1f126b9c37fee0f52af8eb129683f73742333e770d93709",
+  "text": "module spi_mock_peripheral(\ninput logic [1:0] EVENT,\ninput logic SCK,\ninput logic RST_N,\ninput logic MOSI,\ninput logic NORM_CS_N,\ninput logic START,\ninput logic ENC_DEC,\ninput logic [31:0] RESPONSE_WORD,\ninput logic [106:0] STATE_Q,\noutput logic [106:0] STATE_D,\noutput logic [3:0] ERROR,\noutput logic MISO,\noutput logic BUSY,\noutput logic ICE_LED,\noutput logic [31:0] RECEIVED_WORD,\noutput logic [31:0] FRAME_COUNT,\noutput logic [31:0] FRAME_BITS\n);\nlogic q_ready, q_open, q_miso;\nlogic [1:0] q_rem;\nlogic [31:0] q_tx, q_rx, q_frames;\nlogic [5:0] q_bits;\nassign q_ready = STATE_Q[106];\nassign q_open = STATE_Q[105];\nassign q_miso = STATE_Q[104];\nassign q_rem = STATE_Q[103:102];\nassign q_tx = STATE_Q[101:70];\nassign q_rx = STATE_Q[69:38];\nassign q_frames = STATE_Q[37:6];\nassign q_bits = STATE_Q[5:0];\nassign MISO = q_miso;\nassign BUSY = (q_rem != 2'd0);\nassign ICE_LED = (q_rem != 2'd0);\nassign RECEIVED_WORD = q_rx;\nassign FRAME_COUNT = q_frames;\nassign FRAME_BITS = {26'd0, q_bits};\nalways_comb begin\nSTATE_D = STATE_Q;\nERROR = 4'd0;\nif (EVENT == 2'd2 && RST_N == 1'b0) begin\nSTATE_D = 107'd0;\nSTATE_D[106] = 1'b1;\nend else if (q_ready == 1'b1) begin\ncase (EVENT)\n2'd1: begin\nif (!(SCK == 1'b0 && NORM_CS_N == 1'b0 && RST_N == 1'b1)) ERROR = 4'd1;\nelse if (q_open != 1'b0) ERROR = 4'd2;\nelse if (START != 1'b0) ERROR = 4'd4;\nelse if (q_rem != 2'd0) ERROR = 4'd5;\nelse begin\nSTATE_D[105] = 1'b1;\nSTATE_D[5:0] = 6'd0;\nSTATE_D[69:38] = 32'd0;\nSTATE_D[101:70] = RESPONSE_WORD;\nend\nend\n2'd2: begin\nif (SCK != 1'b1) ERROR = 4'd1;\nelse if (NORM_CS_N == 1'b0) begin\nif (q_open != 1'b1) ERROR = 4'd2;\nelse if (!(q_bits < 6'd32)) ERROR = 4'd3;\nelse if (START != 1'b0) ERROR = 4'd4;\nelse if (q_rem != 2'd0) ERROR = 4'd5;\nelse begin\nSTATE_D[104] = q_tx[31];\nSTATE_D[101:70] = {q_tx[30:0], 1'b0};\nSTATE_D[69:38] = {q_rx[30:0], MOSI};\nSTATE_D[5:0] = q_bits + 6'd1;\nend\nend else begin\nif (q_open != 1'b0) ERROR = 4'd2;\nelse if (START == 1'b1) begin\nif (q_rem != 2'd0) ERROR = 4'd4;\nelse STATE_D[103:102] = 2'd3;\nend else if (q_rem != 2'd0) begin\nSTATE_D[103:102] = q_rem - 2'd1;\nend\nend\nend\n2'd3: begin\nif (!(SCK == 1'b0 && NORM_CS_N == 1'b1)) ERROR = 4'd1;\nelse if (q_open != 1'b1) ERROR = 4'd2;\nelse if (q_bits != 6'd32) ERROR = 4'd3;\nelse begin\nSTATE_D[105] = 1'b0;\nSTATE_D[37:6] = q_frames + 32'd1;\nend\nend\ndefault: begin\nSTATE_D = STATE_Q;\nend\nendcase\nend\nend\nendmodule",
+  "completed_at": "2026-11-13T17:27:45.763379+00:00",
+  "api_call_attempted": true
+}

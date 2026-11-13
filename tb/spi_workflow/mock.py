@@ -38,24 +38,35 @@ def validate_mock_synthesis(path):
 
 
 # request one raw combinational module through the shared logged client.
-def request_mock(prompt, logger, mode="live", client=None, seed=4313, timeout_s=60):
+def request_mock(prompt, logger, mode="live", client=None, seed=4313, timeout_s=60, max_tries=4):
     if mode != "live" or not 0 < timeout_s <= 300:
         raise ValueError("Use live generation and a timeout in (0, 300] seconds")
     client = client or LLMClient(logger=logger, timeout_s=timeout_s)
     if client.logger is not logger:
         raise ValueError("The client and request must use the same AI logger")
-    output = client.generate(prompt, system_prompt=DRIVER_SYSTEM_MESSAGE,
-                             temperature=0.0, max_tokens=CODE_MAX_TOKENS, seed=seed,
-                             stage="mock")
-    # retain rejected raw responses alongside the request that produced them.
-    try:
-        artifacts = parse_mock_response(output)
-        validate_mock(artifacts)
-        return artifacts
-    except Exception as error:
-        logger.log_event("error", request_id=client.last_request_id, target="tb_driver",
-                         error_type=type(error).__name__, message=str(error))
-        raise
+    # The mock contract (one raw combinational module, no code fences, no
+    # instances) is strict and the model honors it only intermittently, so retry
+    # locally with the validation error as feedback rather than failing the whole
+    # attempt and re-running the controller and operations stages that passed.
+    feedback = ""
+    error = None
+    for _ in range(max(1, max_tries)):
+        output = client.generate(prompt + feedback, system_prompt=DRIVER_SYSTEM_MESSAGE,
+                                 temperature=0.0, max_tokens=CODE_MAX_TOKENS, seed=seed,
+                                 stage="mock")
+        # retain rejected raw responses alongside the request that produced them.
+        try:
+            artifacts = parse_mock_response(output)
+            validate_mock(artifacts)
+            return artifacts
+        except Exception as err:
+            error = err
+            logger.log_event("error", request_id=client.last_request_id, target="tb_driver",
+                             error_type=type(err).__name__, message=str(err))
+            feedback = ("\n<validation_feedback>" + str(err)[-1500:] + "</validation_feedback> "
+                        "Return ONLY the raw spi_mock_peripheral module text with no code fences, "
+                        "comments, or submodule/primitive instances.")
+    raise error
 
 
 # write only the model-returned module to this attempt's fixed output filename.

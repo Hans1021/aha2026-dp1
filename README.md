@@ -46,6 +46,8 @@ The recovered accelerator was validated against the supplied plaintext/ciphertex
 
 Although the ROM organization suggests a lookup-based cryptographic transformation, we have not conclusively identified the full algorithm or its embedded secret key. We therefore retain the original recovered cryptographic logic rather than replace it with an unverified behavioral reconstruction.
 
+We also used Claude Opus 5.5 to reconstruct a readable SystemVerilog implementation of the recovered SPI shift-register logic. The generated module preserves the original register dependencies and MISO behavior, and was verified against the structural reference over 2,000 simulated clock cycles. This provided an additional AI-assisted reverse-engineering step before Trojan insertion. The workflow, generated RTL, and verification evidence are preserved in notebooks/readable_rtl.ipynb, rtl/readable/, and ai_logs/readable_rtl/, respectively.
+
 ## 3. AI-Assisted Trojan Generation
 
 ### Generation methodology
@@ -128,11 +130,11 @@ Unlike a complete denial of service, this attack introduces a targeted performan
 | **Creative use of AI** | 35 | Portkey-based RTL generation, dedicated notebooks per trojan, previous-code context, structured feedback, and iterative AI corrections |
 | **Trojan quality** | 25 | Three distinct trigger/payload mechanisms, original datapath preservation, and directed simulation evidence |
 | **System automation** | 15 | Automated generation, RTL extraction, logging, compilation, and scripted verification |
-| **Documentation and reproducibility** | 15 | Recovery documentation, notebook workflows, versioned candidate RTL, AI transcripts, and documented simulation results |
+| **Documentation and reproducibility** | 15 | Reverse-engineering analysis (Section 2), readable-RTL reconstruction, notebook workflows, versioned Trojan RTL, complete AI transcripts, and verification evidence |
 | **Exploitation simulation** | 10 | - Bao TODO |
 
 ## 7. Submission
 
 The project submission format is a ZIP containing `README.md`, `rtl/`, `tb/`, and `ai/`.
 
-It includes the recovered baseline, AI-generation notebooks, generated Trojan candidates, and complete recorded AI interactions including intermediate attempts.
+The submission will include the recovered RTL, Trojan candidates, exploit testbenches, and complete AI interaction logs, including unsuccessful and intermediate attempts.

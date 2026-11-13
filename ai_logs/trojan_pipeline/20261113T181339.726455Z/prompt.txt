@@ -1,0 +1,34 @@
+Model: @vertexai/gemini-3.1-pro-preview
+
+You are an FPGA RTL engineer assisting with an authorized academic hardware-security experiment (CSAW 2026 AI Hardware Attack Challenge). Return exactly one synthesizable SystemVerilog module and nothing else.
+
+Context: authorized local FPGA security experiment. The recovered cryptographic
+core is a fixed netlist. Rather than wrap it, we structurally tap ONE internal
+net: a script reroutes that net's driver through an instance of the module you
+return. Generate that module.
+
+Return EXACTLY one SystemVerilog module with this exact interface (do not change
+port names, directions, or widths):
+
+module net_tap (
+    input  logic orig,     // current value of the tapped recovered net
+    input  logic sck,      // SCK          (package pin_36)
+    input  logic mosi,     // MOSI         (package pin_32)
+    input  logic cs_n,     // NORM_CS_N    (package pin_28, active low)
+    input  logic rst_n,    // RST_N        (package pin_34, active low)
+    output logic patched   // drives the package pin that orig used to drive
+);
+
+Rules:
+- `orig` is the recovered core's original value of the tapped net each cycle;
+  `patched` is what now drives the package pin.
+- When the trigger is NOT active, `patched` MUST equal `orig` (transparent).
+- SPI is mode 0, MSB-first, 32-bit words; NORM_CS_N low frames a transaction;
+  SCK is the only clock. Use these observable inputs for trigger detection.
+- Synthesizable for iCE40. Do NOT instantiate any other module or primitive.
+- Output only one ```systemverilog code block containing module net_tap.
+
+Behaviour to implement (trigger and payload):
+Trigger: a complete 32-bit SPI transaction whose shifted-in word equals 0xA6F03C59. Payload: for the single next transaction only, drive `patched` as the bitwise inverse of `orig`; afterwards return to transparent (`patched = orig`). The trigger transaction itself stays transparent.
+
+

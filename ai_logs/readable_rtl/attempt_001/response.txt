@@ -1,0 +1,88 @@
+# SPI I/O Analysis of the Recovered iCE40 Netlist
+
+## Assumed pin roles (hypothesis to confirm)
+
+| Recovered pin | Likely role | Evidence |
+|---|---|---|
+| `pin_36` | SCK | It is the only clock seen (lines 3107, 3308, 3419). |
+| `pin_34` | RST_N | `n2 = !pin_34` (lines 1838, 3456). `n2` forces registers to 0 (lines 3109, 3310). This matches synchronous active-low reset. |
+| `pin_28` | NORM_CS_N | It selects shift versus load in `n2709` and `n2169` (lines 1165, 1704). It also gates enable `n1` (line 626). |
+| `pin_32` | MOSI | It is passed through `n2169` only when `pin_28=0` (line 1165). |
+| `pin_31` | MISO | It is a declared output (top level) and is registered (lines 297, 3421). |
+
+`pin_25` and `pin_27` (START/ENC_DEC) are not mapped. Neither are `pin_38` and `pin_23` (BUSY/ICE_LED). No evidence covers them.
+
+## 1. Signals that directly control MISO
+
+- **Fact:** `pin_31` is a register initialized to 0 (line 297). It is clocked on `posedge pin_36` (line 3419).
+- **Fact:** `pin_31` loads `n2811` on every edge. The enable is `1'b1` and the reset term is a constant `1'b0` (line 3421).
+- **Fact:** `n2811 = n800` (line 1806), so MISO is a one-clock-delayed copy of `n800`.
+- **Fact:** `pin_31` has no reset path. It relies only on its initial value.
+- **Fact:** `n800 <= n1 ? (n2 ? 0 : n2709)` (lines 3308–3310). Expanding `n2709` (line 1704):
+  - With `pin_28=0`, `n2709 = n917`. This is a shift from the neighbouring stage.
+  - With `pin_28=1`, `n2709 = !n807`. This is an inverted load.
+- **Fact:** `n807` is an alias of `n2351` (line 2883). `n2351` is not supplied.
+
+**Conclusion:** MISO is driven as follows:
+- `pin_31` comes from `n800`.
+- `n800` comes from `n917` (shift) or `!n807` (load).
+- `n800` is gated by `n1` and cleared by `n2`.
+
+## 2. How MOSI enters the logic
+
+- **Fact:** `n2169 = n630 ? (pin_28 ? 0 : pin_32) : (pin_28 ? 1 : pin_32)` (line 1165).
+  - With `pin_28=0`, this reduces to `pin_32`.
+  - With `pin_28=1`, it reduces to `!n630`.
+- **Hypothesis:** `n2169` is the D-input mux of the first shift-chain stage. Its structure matches `n2709` (shift input versus inverted parallel load).
+- **Gap:** The register that consumes `n2169` is not in the evidence.
+- **Gap:** There is no evidence of MOSI synchronization. `pin_32` appears to feed a LUT directly.
+
+## 3. Registers participating in serial transfers
+
+| Register | Evidence | Status |
+|---|---|---|
+| `pin_31` | Lines 297, 3419–3421 | Confirmed output retiming stage |
+| `n800` | Lines 3308–3310, 1704 | Confirmed last chain stage (shift `n917` / load `!n807`) |
+| `n917` | Lines 3107–3109 | Same `n1` enable and `n2` reset as `n800`. Its D input `n2535` is unknown, so it is a likely preceding stage. |
+| consumer of `n2169` | Line 1165 | Hypothesized first stage, not shown |
+| `n807` (FF, line 2883) | Load source for `n800` | Probably a result/data register, not a shift stage |
+
+**Inversions on load:** Both load paths are inverted (`!n807` at line 1704, `!n630` at line 1165). This is a fact. Whether it means inverted storage or a LUT-packing artifact is unresolved.
+
+**Hypothesis on chain length:** The documented echo behaviour (shift in P, read back P) implies a chain of about 32 stages between the `n2169` stage and `n800`. The extra `pin_31` stage may also need accounting. This is unverified.
+
+## 4. Clocking and chip select
+
+- **Clock (fact):** All shown registers clock on `posedge pin_36`. This is consistent with the documented statement that SCK is the system clock.
+- **Chip select and enable (fact):** Evaluating `n1 = n1630` (lines 626, 2057):
+  - `pin_34=0` (reset) gives `n1=1`. Reset always takes effect.
+  - `pin_34=1, pin_28=0` gives `n1=1`. The chain shifts on every clock while CS is low.
+  - `pin_34=1, pin_28=1` gives `n1 = n972 ? n970 : 0`. With CS high, the chain only updates (loads) when `n972 & n970`.
+- **Hypothesis:** `n972 & n970` is a load strobe, for example result-ready. This is unconfirmed.
+- **Timing concern (fact-based):** `pin_31` updates on the same rising edge on which mode-0 masters sample MISO. It also delays `n800` by one cycle. Bit alignment at the first readout edge must be measured, not assumed.
+- **Comment discrepancy:** Line 2057 is labelled "FF" but is written as a continuous `assign`. Treat `n1` as combinational (`n1 = n1630`) until the export is checked.
+
+## 5. Signals to trace next
+
+1. The register(s) whose D input is `n2169`. This is the MOSI entry stage.
+2. `n2535`, the D input of `n917`. Confirm it is a `pin_28`-selected shift/load mux like `n2709`.
+3. The full chain from the `n2169` stage to `n917`. Count the stages and check bit order (MSB-first).
+4. `n2351` (feeds `n807`) and `n630`, the parallel-load sources.
+5. `n972` and `n970`, the CS-high load-enable terms.
+6. Other uses of `n1` and `n2`. These identify every register in the shift group.
+7. The drivers of `pin_38` and `pin_23`, and the consumers of `pin_25` and `pin_27`. These complete the pin mapping.
+
+## 6. Smallest reconstructable block
+
+The smallest block is the **MISO output slice**:
+- the `n800` register with its mux `n2709`;
+- reset `n2 = !pin_34`;
+- enable `n1 = n1630`;
+- the `pin_31` retiming register.
+
+All of its logic is present in lines 626, 1704, 1806, 1838, 2057, 3308–3310, 3419–3421, and 3456. Its unresolved signals (`n917`, `n807`, `n970`, `n972`) can be treated as external inputs for now.
+
+A generic "shift/load bit cell" is a slightly larger alternative:
+- It would take shift-in, load-data, CS, enable, and reset as inputs.
+- It would be justified by the matching mux structures in `n2709` and `n2169`.
+- It should only be generalized after items 1–3 above confirm that the chain is uniform.

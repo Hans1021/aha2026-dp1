@@ -1,0 +1,40 @@
+module readable_miso (
+    input  logic clk,        // original pin_36
+    input  logic cs_n,       // original pin_28
+    input  logic shift_in,   // original n917
+    input  logic load_data,  // original n807
+    input  logic enable,     // original n1
+    input  logic reset,      // original n2
+    output logic miso        // original pin_31
+);
+
+    // Internal shift bit (original n800)
+    logic miso_shift_bit = 1'b0;
+
+    // Output register (original pin_31)
+    logic miso_reg = 1'b0;
+
+    // Next-state logic for the shift bit (original n2709):
+    //   cs_n high -> inverted load_data
+    //   cs_n low  -> shift_in
+    logic miso_shift_next;
+    assign miso_shift_next = cs_n ? ~load_data : shift_in;
+
+    // Shift bit register: hold unless enabled; synchronous reset to zero
+    always_ff @(posedge clk) begin
+        if (enable) begin
+            if (reset)
+                miso_shift_bit <= 1'b0;
+            else
+                miso_shift_bit <= miso_shift_next;
+        end
+    end
+
+    // Output register: updates every clock, no reset
+    always_ff @(posedge clk) begin
+        miso_reg <= miso_shift_bit;
+    end
+
+    assign miso = miso_reg;
+
+endmodule

@@ -1,0 +1,50 @@
+# Recovered iCE40 Crypto Accelerator: Architecture Analysis
+
+## 1. SPI interface and shift register
+
+**Confirmed from the netlist**
+
+- **Chain size and clock.** There is one 32-flop chain, `n628 → … → n800`, plus a 33rd output flop `pin_31`. All of them clock on `pin_36`.
+- **Same next-state form in every stage.** I reduced each LUT to one expression:
+  - `next = pin_28 ? !ext_i : prev_stage`
+  - Some LUTs are written as nested muxes, for example `n1515`, `n1707` and `n1787`. Expanding them gives exactly this form. For instance, `n1515` reduces to `pin_28 ? !n1032 : n1024`.
+- **Serial path.** Stage 0 is `n2169 = pin_28 ? !n630 : pin_32`. So `pin_32` is the serial input, and `pin_31 <= n800` is the serial output.
+- **Bit order.** The first bit received travels to `n800` after 32 enabled shifts. This gives FIFO, MSB-first behaviour, consistent with the documented SPI mode.
+- **Parallel load.** When `pin_28=1`, every stage loads the inverse of one of exactly 32 external nets. Stage order and source net:
+
+| Stages | Source nets |
+|---|---|
+| 0–7 | `n630, n624, n615, n618, n599, n608, n611, n602` |
+| 8–15 | `n785, n762, n763, n755, n775, n778, n779, n896` |
+| 16–23 | `n1026, n1027, n1033, n1032, n1035, n905, n1040, n1041` |
+| 24–31 | `n911, n923, n914, n812, n813, n802, n916, n807` |
+
+- **Boundary accounting.** These 32 nets plus `n1`, `n2`, `pin_28`, `pin_32` and `pin_36` account for all 37 listed boundary signals.
+- **Output flop.** `pin_31` has no enable and no reset. It updates on every `pin_36` edge, so the output is one register stage behind `n800`.
+
+**Inference (MISO alignment)**
+
+- Because MISO comes from a flop, a correct readout requires the master to sample *after* each rising edge.
+- MicroPython SoftSPI reads MISO after it drives SCK high, which matches this.
+- Under that sampling, the echo returns `P[31]` first, then the remaining bits in order.
+- **Testbench consequence:** sampling before the edge would produce a one-bit misalignment, with a leading stale bit or a duplicated MSB.
+
+## 2. Clocking, enable and reset
+
+**Confirmed**
+
+- **Single clock.** All flops use `pin_36`, which is consistent with SCK being the only clock.
+- **Gating and priority.** For all 32 chain flops, `if (n1) q <= n2 ? 0 : f`:
+  - `n1` is a clock enable; when it is low the flop holds.
+  - `n2` is a synchronous clear that takes effect only while `n1` is high.
+  - Clear has priority over load and over shift.
+- **Power-up state.** All flops have `initial=0` (iCE40 configuration init).
+
+**Hypotheses**
+
+- `pin_36` = SCK and `pin_32` = MOSI.
+- `pin_31` = MISO. This one is strongly supported by the chain topology.
+- `n1` probably combines the inverted CS with reset and/or a load condition, because reset must be able to clear the chain while CS is high. This is unverified.
+- `n2` probably derives from `RST_N`.
+- `pin_28` is a direct package-pin signal acting as the load/shift select.
+  - It is unclear whether it

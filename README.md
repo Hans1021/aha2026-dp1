@@ -1,78 +1,138 @@
-# CSAW 2026 AI Hardware Attack Challenge
+# CSAW 2026 AI Hardware Attack Challenge — Qualifier
 
-Team: The Bitstream Bandits
-Members: Hans Yang and Bao Nguyen
+**Team:** The Bitstream Bandits
 
-## Objective
+**Members:** Bao Nguyen, Hans Yang
 
-Use generative AI to create a hardware Trojan in a
-cryptographic FPGA circuit recovered from a bitstream.
+**Project:** AI-Assisted Hardware Trojan Generation and Verification  
 
-The Trojan must preserve normal operation and activate
-a malicious payload under a specific trigger condition.
+## 1. Project Overview
 
-## Workflow
+The objective of this project is to use generative AI to reverse engineer a cryptographic FPGA accelerator and introduce a hardware Trojan that remains inactive during normal operation but produces malicious behavior when a specific trigger is encountered.
 
-1. Recover structural Verilog from the FPGA bitstream.
-2. Ask AI to rewrite it into readable, higher-level RTL.
-3. Simulate and compare original and rewritten versions.
-4. Use AI to generate and insert a hardware Trojan.
-5. Simulate normal operation and triggered behavior.
-6. Submit modified RTL, exploit testbench, AI logs, and documentation.
+The target is a cryptographic accelerator implemented on a Lattice iCE40 UltraPlus FPGA. It communicates with an RP2040 microcontroller over SPI. The original RTL was not supplied, so the first stage involved recovering a functional representation from the provided FPGA bitstream.
 
-The readable RTL rewrite is optional. If equivalence cannot
-be established, use a copy of the recovered RTL instead.
+Rather than develop a single Trojan, we generated three independent variants to explore different attacks:
 
-## Progress
+| Variant | Trigger | Payload | Selected RTL |
+| --- | --- | --- | --- |
+| Functionality corruption | SPI word `0xA6F03C59` | Inverts the next 32-bit MISO response | `attempt_009.sv` |
+| Denial of service | SPI word `0xBAADF00D` | Holds BUSY high until reset | `attempt_007.sv` |
+| Performance degradation | Fourth START operation | Extends BUSY by eight SCK cycles | `attempt_010.sv` |
 
-### Completed
+The three variants are independent alternatives. Only one is compiled into the accelerator at a time.
 
-- Bitstream recovered using Project IceStorm.
-- Structural and simulation-compatible Verilog generated.
-- FPGA external interface mapped.
-- Normal encryption/decryption examples pass simulation.
-- Preliminary AI architecture analysis performed.
+## 2. Reverse Engineering the Accelerator
 
-### Remaining
+We used the open-source FPGA toolchain and automated analysis scripts to reconstruct a structural Verilog model of the accelerator.
 
-- AI-readable RTL generation.
-- Behavioral equivalence testing.
-- AI-generated Trojan implementation.
-- Exploit testbench and simulation.
-- Final documentation and submission.
+The recovered implementation is preserved in `recovery/recovered_sim.v`. Its external interface was identified and validated against the provided MicroPython application.
 
-## Important Files
+The main signals are SCK, MOSI, MISO, chip-select, START, reset, encryption/decryption selection, BUSY, and ICE_LED.
 
-- inputs/ice40_bitstream.bin — original bitstream
-- recovery/recovered_pins.v — compact structural Verilog
-- recovery/recovered_sim.v — working simulation reference
-- rtl/ — future AI-generated RTL
-- tb/crypto_tb.sv — normal-operation testbench
-- tb/crypto_dut.sv — recovered FPGA wrapper
-- tb/spi_operations.svh — reusable SPI tasks
-- docs/transaction_specification.md — interface specification
-- ai_logs/ — AI generation records
+Our analysis identified several important architectural features:
 
-## Simulation
+- Four embedded `SB_RAM40_4K` blocks with identical initialization data but different read addresses.
+- An iterative cryptographic datapath driven by SCK.
+- A direct relationship between the BUSY and ICE_LED outputs.
+- A 32-bit SPI interface using mode 0 and MSB-first transmission.
 
-Run:
+The recovered accelerator was validated against the supplied plaintext/ciphertext example:
 
-    make sim
+| Operation | Input | Expected output |
+| --- | --- | --- |
+| Encryption | `0x59C359C3` | `0x9CD84392` |
+| Decryption | `0x9CD84392` | `0x59C359C3` |
 
-Expected supplied example:
+Although the ROM organization suggests a lookup-based cryptographic transformation, we have not conclusively identified the full algorithm or its embedded secret key. We therefore retain the original recovered cryptographic logic rather than replace it with an unverified behavioral reconstruction.
 
-    Encrypt: 59C359C3 -> 9CD84392
-    Decrypt: 9CD84392 -> 59C359C3
+## 3. AI-Assisted Trojan Generation
 
-## AI Requirements
+### Generation methodology
 
-All Trojan hardware and exploit generation must be performed
-using AI, with complete prompts and responses preserved.
+Trojan generation was performed using Jupyter notebooks connected to NYU's Portkey AI gateway.
 
-Human-written scripts and ordinary reverse-engineering tools
-may be used for supporting analysis and verification.
+Our primary successful model was **Gemini 3.1 Pro** (`@vertexai/gemini-3.1-pro-preview`). We also experimented with Claude Opus 5.5 and Qwen3-Coder-Next. Initial attempts either failed to produce usable RTL or introduced interface and state-machine errors, motivating our iterative correction workflow.
 
-## Next Step
+Each Trojan has a dedicated notebook under `notebooks/trojans/`.
 
-Generate a readable RTL candidate with AI and compare its
-behavior against the recovered reference using Bao's testbench.
+The generation process consists of four stages:
+
+1. **Setup:** Load the recovered RTL, configure the AI model, and prepare the output directories.
+2. **Specification:** Define the Trojan trigger, malicious payload, and constraints on normal operation.
+3. **AI generation:** Request a complete SystemVerilog implementation, extract the generated code, and preserve the model's response.
+4. **Compilation:** Compile the result using Icarus Verilog with the original recovered core and iCE40 primitive library.
+
+### Iterative refinement
+
+Instead of regenerating unsuccessful designs from scratch, each notebook retains previous attempts and uses their RTL as context for subsequent AI requests.
+
+When compilation, review, or simulation identifies an error, we provide the model with the previous implementation and specific feedback.
+
+Examples of corrections included SPI transaction-boundary handling, trigger-state reset behavior, MISO bit timing, and an off-by-one error in the BUSY extension counter.
+
+Every revision is saved separately as `attempt_NNN.sv`. The notebooks also preserve prompts, AI responses, model metadata, and compilation output under `ai_logs/trojans/`.
+
+This allows the complete development process to be examined, including unsuccessful intermediate results.
+
+### Trojan insertion method
+
+The recovered cryptographic module is renamed `recovered_original` without changing its underlying logic.
+
+AI then generates a new top-level module named `recovered`, which instantiates the original core and adds the Trojan's trigger detection and payload circuitry.
+
+This approach preserves the recovered datapath while allowing the Trojan to intercept selected external signals.
+
+It also provides a consistent way to generate, compile, and compare different Trojan candidates.
+
+## 4. Trojan Designs
+
+### Functionality corruption
+
+**Trigger:** A complete 32-bit SPI transaction containing `0xA6F03C59`.
+
+**Payload:** Invert all 32 MISO bits of the following transaction, then return to normal operation.
+
+The trigger transaction itself is unaffected. The underlying cryptographic state is preserved because the payload modifies the externally observed MISO signal rather than the encryption datapath.
+
+The rare trigger word and one-transaction payload limit the conditions under which the attack becomes observable.
+
+### Denial of service
+
+**Trigger:** A complete 32-bit SPI transaction containing `0xBAADF00D`.
+
+**Payload:** Permanently assert BUSY and ICE_LED until reset.
+
+The malicious output makes the accelerator appear occupied or unable to complete an operation. The effect persists independently of the original core's BUSY signal.
+
+Reset clears the Trojan and restores normal output behavior.
+
+### Performance degradation
+
+**Trigger:** The fourth START operation after reset.
+
+**Payload:** Hold externally visible BUSY high for eight additional SCK cycles after the original core completes its operation.
+
+The first three operations remain unaffected. The payload activates only on the fourth operation, and later operations return to normal timing.
+
+Unlike a complete denial of service, this attack introduces a targeted performance penalty while preserving the cryptographic datapath.
+
+## 5. Verification and Results
+
+- Bao TODO
+
+## 6. Evaluation Against the Qualifier Rubric
+
+| Category | Weight | Our approach and evidence |
+| --- | ---: | --- |
+| **Creative use of AI** | 35 | Portkey-based RTL generation, dedicated notebooks per trojan, previous-code context, structured feedback, and iterative AI corrections |
+| **Trojan quality** | 25 | Three distinct trigger/payload mechanisms, original datapath preservation, and directed simulation evidence |
+| **System automation** | 15 | Automated generation, RTL extraction, logging, compilation, and scripted verification |
+| **Documentation and reproducibility** | 15 | Recovery documentation, notebook workflows, versioned candidate RTL, AI transcripts, and documented simulation results |
+| **Exploitation simulation** | 10 | - Bao TODO |
+
+## 7. Submission
+
+The project submission format is a ZIP containing `README.md`, `rtl/`, `tb/`, and `ai/`.
+
+It includes the recovered baseline, AI-generation notebooks, generated Trojan candidates, and complete recorded AI interactions including intermediate attempts.

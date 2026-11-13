@@ -1,0 +1,29 @@
+Model: @vertexai/anthropic.claude-opus-5-5
+
+
+Rewrite this recovered Verilog as readable SystemVerilog.
+
+Module name: readable_shift_stage_2
+
+Signal mappings:
+pin_36 = clk
+pin_28 = cs_n
+n802 = load_data
+n814 = shift_in
+n1 = enable
+n2 = reset
+n798 = shift_out
+
+Requirements:
+- Preserve exact functionality and initialization.
+- Preserve clocking, reset, and enable behavior.
+- Use mapped names as module ports.
+- Do not invent functionality or additional state.
+- Return one complete SystemVerilog code block.
+
+Original RTL:
+reg n635 = 0, n642 = 0, n662 = 0, n663 = 0, n698 = 0, n745 = 0, n776 = 0, n781 = 0, n798 = 0, n800 = 0;
+assign n2207 = /* LUT    7 11  0 */ (pin_28 ? !n802 : n814);
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n798 <= n2 ? 1'b0 : n2207;

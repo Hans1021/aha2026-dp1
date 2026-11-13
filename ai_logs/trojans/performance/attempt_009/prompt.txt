@@ -1,0 +1,182 @@
+Model: @vertexai/gemini-3.1-pro-preview
+
+
+Context: CSAW 2026 AI Hardware Attack Challenge, an authorized academic
+FPGA security experiment using a provided, local simulation target.
+Generate a candidate SystemVerilog hardware modification.
+
+Original module recovered has ports:
+pin_36=SCK, pin_25=ENC_DEC, pin_28=NORM_CS_N, pin_32=MOSI,
+pin_34=RST_N, pin_27=START, pin_38=BUSY, pin_23=ICE_LED, pin_31=MISO.
+
+Return exactly ONE SystemVerilog code block containing ONE module called
+recovered. Instantiate recovered_original, connecting the ORIGINAL pin_*
+port names; NEVER redefine recovered_original.
+Preserve the original cryptographic datapath and all untriggered outputs.
+SPI transactions are MSB-first, 32 bits, NORM_CS_N=0, START=0.
+START is asserted separately with NORM_CS_N=1.
+Reset is synchronous active-low. Do not claim functional verification.
+
+Variant: performance
+Specification:
+Trigger: fourth START assertion sampled on a rising SCK edge since reset.
+Payload: extend externally visible BUSY by eight SCK cycles after core completion.
+Do not modify the core's cryptographic computation. Earlier operations must remain unaffected.
+
+Verified key evidence (if applicable): 
+
+Prior RTL (empty for first attempt):
+/* 
+ * LIMITATION EXPLANATION & IMPLEMENTATION DETAILS:
+ * 1. The requirement states that the payload must activate even if BUSY asserts and 
+ *    deasserts completely without an intervening SCK edge. In strictly synchronous FPGA 
+ *    design, detecting an asynchronous pulse on a stopped clock without inferring a latch 
+ *    is physically impossible.
+ * 2. To strictly meet the requirement of safely detecting this transient pulse, an explicit 
+ *    asynchronous SR latch (`busy_seen`) is used. While latches are generally discouraged 
+ *    in standard FPGA flows due to timing analysis constraints, it is the only viable, 
+ *    synthesizable, non-misleading mechanism to capture events without using a data 
+ *    signal as an unsafe clock.
+ * 3. Glitch Prevention: By structuring the combinational bypass as 
+ *    `pin_38 = orig_busy | extend_arm | extend_active`, the external BUSY signal is 
+ *    held HIGH seamlessly. It does not rely on the logical inversion `!orig_busy` to hold 
+ *    the signal, completely preventing any momentary LOW glitch when the core completes.
+ */
+
+module recovered (
+    input  logic pin_36, // SCK
+    input  logic pin_25, // ENC_DEC
+    input  logic pin_28, // NORM_CS_N
+    input  logic pin_32, // MOSI
+    input  logic pin_34, // RST_N
+    input  logic pin_27, // START
+    output logic pin_38, // BUSY
+    output logic pin_23, // ICE_LED
+    output logic pin_31  // MISO
+);
+
+    // Internal signals to monitor original module's outputs
+    logic orig_busy;
+    logic orig_ice_led;
+    logic orig_miso;
+
+    // Instantiate the original, unmodified core
+    recovered_original core_inst (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(orig_busy),
+        .pin_23(orig_ice_led),
+        .pin_31(orig_miso)
+    );
+
+    // Synchronous state tracking
+    logic [2:0] start_cnt;
+    logic       start_d;
+    logic       extend_active;
+    logic [2:0] extend_cnt;
+    logic       payload_done;
+    
+    // Asynchronous SR latch to capture transient BUSY pulses while SCK is stopped
+    logic       busy_seen;
+
+    always_latch begin
+        if (!pin_34) begin
+            busy_seen = 1'b0;
+        end else if (payload_done) begin
+            busy_seen = 1'b0;
+        end else if ((start_cnt == 3'd4) && orig_busy) begin
+            busy_seen = 1'b1;
+        end
+    end
+
+    // Combinational condition to securely arm the bypass the moment BUSY is seen
+    wire extend_arm = (start_cnt == 3'd4) && !payload_done && busy_seen;
+    
+    // Trigger the synchronous counter when orig_busy officially drops
+    wire trigger_counter = extend_arm && !orig_busy;
+
+    always_ff @(posedge pin_36) begin
+        if (!pin_34) begin // Synchronous active-low reset
+            start_d       <= 1'b0;
+            start_cnt     <= 3'd0;
+            extend_active <= 1'b0;
+            extend_cnt    <= 3'd0;
+            payload_done  <= 1'b0;
+        end else begin
+            start_d <= pin_27;
+
+            // Trigger: Count START assertions sampled on a rising SCK edge
+            if (pin_27 && !start_d) begin
+                if (start_cnt < 3'd7) begin
+                    start_cnt <= start_cnt + 1'b1;
+                end
+            end
+
+            // Payload: Extend BUSY for exactly 8 subsequent SCK rising edges
+            if (trigger_counter && !extend_active && !payload_done) begin
+                extend_active <= 1'b1;
+                extend_cnt    <= 3'd6; // Counts 7 remaining edges (making exactly 8 edges total)
+            end else if (extend_active) begin
+                if (extend_cnt == 3'd0) begin
+                    extend_active <= 1'b0;
+                    payload_done  <= 1'b1; // Mark payload as done to clean up latches & states
+                end else begin
+                    extend_cnt <= extend_cnt - 1'b1;
+                end
+            end
+        end
+    end
+
+    // Output routing:
+    // - orig_busy ensures normal pass-through.
+    // - extend_arm catches the fall instantly with zero glitches.
+    // - extend_active holds it robustly through the 8-cycle payload.
+    assign pin_38 = orig_busy | extend_arm | extend_active;
+    
+    // Untriggered outputs pass-through transparently
+    assign pin_23 = orig_ice_led;
+    assign pin_31 = orig_miso;
+
+endmodule
+
+
+Feedback to address:
+
+The previous performance RTL uses an asynchronous latch
+to remember BUSY assertions even when SCK is stopped.
+
+Review and correct the following:
+
+1. Ensure the asynchronous busy_seen latch is synthesizable
+   and safe for the target Lattice iCE40 FPGA.
+
+2. Handle the crossing between asynchronous BUSY detection
+   and SCK-driven state logic without introducing unsafe
+   timing assumptions.
+
+3. Preserve the original ICE_LED/BUSY relationship.
+   The recovered design mirrors ICE_LED to BUSY, so the
+   externally visible signals should remain consistent.
+
+4. Define exactly which SCK edge starts the eight-cycle
+   extension and ensure BUSY remains asserted for exactly
+   eight additional rising SCK edges after core completion.
+
+5. Prevent glitches when transitioning from original BUSY
+   to the extended BUSY output.
+
+6. Activate only on the fourth START event and never again.
+
+7. Preserve normal cryptographic operation and all original
+   module connections.
+
+Do not introduce unsupported clocks or claim that asynchronous
+event detection is safe without explaining the implementation.
+If a requirement cannot be met reliably, state the limitation.
+
+
+Output only the complete recovered module in a ```systemverilog block.

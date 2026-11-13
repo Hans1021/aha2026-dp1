@@ -1,0 +1,33 @@
+Model: @vertexai/gemini-3.1-pro-preview
+
+
+Context: CSAW 2026 AI Hardware Attack Challenge, an authorized academic
+FPGA security experiment using a provided, local simulation target.
+Generate a candidate SystemVerilog hardware modification.
+
+Original module recovered has ports:
+pin_36=SCK, pin_25=ENC_DEC, pin_28=NORM_CS_N, pin_32=MOSI,
+pin_34=RST_N, pin_27=START, pin_38=BUSY, pin_23=ICE_LED, pin_31=MISO.
+
+Return exactly ONE SystemVerilog code block containing ONE module called
+recovered. Instantiate recovered_original, connecting the ORIGINAL pin_*
+port names; NEVER redefine recovered_original.
+Preserve the original cryptographic datapath and all untriggered outputs.
+SPI transactions are MSB-first, 32 bits, NORM_CS_N=0, START=0.
+START is asserted separately with NORM_CS_N=1.
+Reset is synchronous active-low. Do not claim functional verification.
+
+Variant: dos
+Specification:
+Trigger: receive a complete 32-bit SPI word 0xBAADF00D while NORM_CS_N is low.
+Payload: latch externally visible BUSY high until synchronous reset. Preserve the core internally.
+
+Verified key evidence (if applicable): 
+
+Prior RTL (empty for first attempt):
+
+
+Feedback to address:
+
+
+Output only the complete recovered module in a ```systemverilog block.

@@ -1,0 +1,2 @@
+PASS: SPI MISO equivalence (2000 cycles)
+/home/hansyang/projects/aha2026/aha2026-course/build/test_spi_shift.sv:194: $finish called at 20001000 (1ps)

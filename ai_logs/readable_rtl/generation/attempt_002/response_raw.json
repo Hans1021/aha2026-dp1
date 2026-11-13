@@ -1,0 +1,54 @@
+{
+  "id": "msg_vrtx_011CgzVUrxuvju2NkLUiq2XL",
+  "choices": [
+    {
+      "finish_reason": "end_turn",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "```systemverilog\nmodule readable_shift_stage (\n    input  wire clk,\n    input  wire cs_n,\n    input  wire shift_in,\n    input  wire load_data,\n    input  wire enable,\n    input  wire reset,\n    output reg  shift_out\n);\n\n    // Power-up initialization (matches original n917 = 0)\n    initial shift_out = 1'b0;\n\n    // Next-state data (original LUT n2535):\n    //   cs_n low  -> pass shift_in\n    //   cs_n high -> inverted load_data\n    wire next_data = cs_n ? ~load_data : shift_in;\n\n    // Clock-enabled register with synchronous reset.\n    // Reset only takes effect when enable is high; when enable is low the\n    // register holds its value.\n    always @(posedge clk) begin\n        if (enable)\n            shift_out <= reset ? 1'b0 : next_data;\n    end\n\nendmodule\n```",
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": null,
+        "refusal": null,
+        "audio": null,
+        "content_blocks": [
+          {
+            "type": "thinking",
+            "thinking": "",
+            "signature": "CAQS+QQKEggTEAIYAjgBQgh0aGlua2luZxIM244C0ca3EzXYiIy+Ggy1TtMVNXancQa0sKAiMCXCjjxkMr27VMAFnSnqQYEFSPwAkhKs74r6QuyU4WW7ZjbCjOsZaExExt90LMWu5CqUBCXMCp5iHXPCwQ5diSSX7xcikAN/SDr8WKGQaldz7DKgnaPtec+D9XK9BMbFvV/Zb+dGk01EGzcLGUU5+g/ek8NCVea5noXf88tj3kOdteH4o+OpS3GiBusn9p0rQ83LIagT0wweJbJz0wEYovdnROi+CKwHyFDkh86fAgFG0ix6XtKqkdpPI6ZR2tGE5AuQm6tTJIw1zJSsxAtctDLUqMcKRq4YzU8kqMadjBYOu3o1wbNBZxYCtfQ9oXb9pf3W11btkDJgQdeGtzcDcV9VMB70TvVYBm1mO7Ycym1HeHuXmYbRTMO2k12LopoD2VhZzYKb+fXkqOEck0PcMWqr4TKbM03374flPRwOb5oCJPzrkVdEel782fIFnkty6Ye1hJBlNAW2BI18d7pv8pO8Ht+LHTczM445CAQnrb/imwhHI9NdY7ZLjSVuQXwVrz0GwuEhgdYEMGaxX4lwBc7RS9z8DIB1cTecI22XhDe3ht0ii1SfJYnt67sWpdEJV6YOzxjtIQbZiOgBqYPHSQBPOjSQvclrlyGlB9voQ1h6QzRWAmHGTVik/I2Sc1ZH+ELE7FDyFsLSbAXpOXCOAO/SPHRjE5bhFwunoOj4Rc2C9VOoUr6nen3NkGlMsyOPLI7/p+kadbi/uzy0DPIUbZ8F7iRAyQNfaGk9OTTaL2bXhBUiXTNLZTczlvGM/Mktq2w8xJPBC4oYAQ=="
+          },
+          {
+            "type": "text",
+            "text": "```systemverilog\nmodule readable_shift_stage (\n    input  wire clk,\n    input  wire cs_n,\n    input  wire shift_in,\n    input  wire load_data,\n    input  wire enable,\n    input  wire reset,\n    output reg  shift_out\n);\n\n    // Power-up initialization (matches original n917 = 0)\n    initial shift_out = 1'b0;\n\n    // Next-state data (original LUT n2535):\n    //   cs_n low  -> pass shift_in\n    //   cs_n high -> inverted load_data\n    wire next_data = cs_n ? ~load_data : shift_in;\n\n    // Clock-enabled register with synchronous reset.\n    // Reset only takes effect when enable is high; when enable is low the\n    // register holds its value.\n    always @(posedge clk) begin\n        if (enable)\n            shift_out <= reset ? 1'b0 : next_data;\n    end\n\nendmodule\n```"
+          }
+        ]
+      }
+    }
+  ],
+  "created": 1794553038,
+  "model": "claude-opus-5-5",
+  "object": "chat.completion",
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 555,
+    "completion_tokens": 414,
+    "total_tokens": 969,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 107,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0
+    },
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    }
+  },
+  "service_tier": null,
+  "provider": "vertex-ai"
+}

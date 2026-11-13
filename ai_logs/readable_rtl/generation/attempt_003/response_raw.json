@@ -1,0 +1,54 @@
+{
+  "id": "msg_vrtx_011CgzVrHJDaN7GCB1g1VLMA",
+  "choices": [
+    {
+      "finish_reason": "end_turn",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "The unused registers in the recovered source (`n635`, `n642`, `n662`, `n663`, `n698`, `n745`, `n776`, `n781` and `n800`) are never driven or read, so I left them out.\n\nThe reset is synchronous and only takes effect when `enable` is high, as in the original.\n\n```systemverilog\nmodule readable_shift_stage_2 (\n    input  logic clk,\n    input  logic cs_n,\n    input  logic load_data,\n    input  logic shift_in,\n    input  logic enable,\n    input  logic reset,\n    output logic shift_out = 1'b0\n);\n\n    // Combinational next-state select (originally LUT n2207):\n    // cs_n high -> inverted load_data; cs_n low -> shift_in\n    logic next_bit;\n    assign next_bit = cs_n ? ~load_data : shift_in;\n\n    // Register holds unless enable is asserted; while enabled,\n    // reset synchronously forces zero, otherwise loads next_bit.\n    always_ff @(posedge clk) begin\n        if (enable)\n            shift_out <= reset ? 1'b0 : next_bit;\n    end\n\nendmodule\n```",
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": null,
+        "refusal": null,
+        "audio": null,
+        "content_blocks": [
+          {
+            "type": "thinking",
+            "thinking": "",
+            "signature": "CAQS8gYKEggTEAIYAjgBQgh0aGlua2luZxIMlQPmsjqFehF/wlWAGgz8Eydiw37IhQs3CQciMEz+3UQWCwZxiQaV8x4Ba5love6UbFNZIVhduSXJ6TEqEL95oXXSthXJcTRfMMIg+yqNBtgxRzS4SnKWw+OlISWirB0bvIqwKtAr8xZYA2QOKKbvk5+9djPuAy3xaM0fpnAM1tqlK5UK2DRtcCYR+2eIZMLPHUejb0OAr09xzChc8XstS0OBhuTtHBcZ/Nio1uht2eCnAAaieAPejqYZaCArQsFvz4oS+Iajn2f6nfsnS7rAiVSTRRCuDInD7XtYA0iNFP/ix+j92r0+d8fQSc7SiWI8pDOUNc3zcNGM+EecS4B2jWQI3rEDctDJGrLaMUb8Z9BCN6aU7KHaEr2eHfQ8CSE4+EssqylieWb8+27fr3WxxgV1fU7OqhsTpDvTzg7CLjohdnL0kET2m3OvBGnarb2+x0SbVLDKh8R3l68UfVm9lJ2ANsiYRnZRwdhfWEVyfXhqH3PDM4mVinQ7zKJ2EwiKtJvoCBfftJRTuwxEo+hTW5bqoVoMDzds46/Z18RghdfFaUp0HHpgUxUozQBEWsMIGMC9LB3a3jbkfrybzjtaY6788ieHi0q1WwgzQ3dtalPlgQYAuByx/gvzvG00uBF7ia1zl1/Skl3wQJRSqbGN5xi9Hcm5Ls2HYGANcY4Wlx0+XILGr60As+Prmd1PqMySxZPyFyBabdSupVUJ5YBYtUDDalsiIoQf3MCAhaFYTkf5BDcs0+mvWY69cKXCcagtwY101AbdTBeaiqTvPWXYtpFB2z5J2nFjHgmvZJA974MnRslld7ihEYtYvsZoyOuXzzg1SV8HvKTnTen/fSB56CY23xrqULy34sI1tI+aun9iN7/RhHhPbjxKqGYZvSPRgIj5jAAbNKQ/2gQu+JrvpIJylyjPRx01cukTOryoguChUHbC1r+hXPC78XHDxy13GFlPgu3HhcZe7PLKKzOHVer9rYI2/2onSoxOOBXuupsscntz68f6KVModEPrFDnCLJxTRTzhHqU/fyjO9P1QWIw0j+kJwFfVdxDiM1TpsA9eoMQ4QE8V2e5Jqngjz2M0TWwhh3e7mbYM+mc0jjD6sYvxUzYAPcOXjsyNvu3vHhso2gm7CrKKDrDnrvEYAQ=="
+          },
+          {
+            "type": "text",
+            "text": "The unused registers in the recovered source (`n635`, `n642`, `n662`, `n663`, `n698`, `n745`, `n776`, `n781` and `n800`) are never driven or read, so I left them out.\n\nThe reset is synchronous and only takes effect when `enable` is high, as in the original.\n\n```systemverilog\nmodule readable_shift_stage_2 (\n    input  logic clk,\n    input  logic cs_n,\n    input  logic load_data,\n    input  logic shift_in,\n    input  logic enable,\n    input  logic reset,\n    output logic shift_out = 1'b0\n);\n\n    // Combinational next-state select (originally LUT n2207):\n    // cs_n high -> inverted load_data; cs_n low -> shift_in\n    logic next_bit;\n    assign next_bit = cs_n ? ~load_data : shift_in;\n\n    // Register holds unless enable is asserted; while enabled,\n    // reset synchronously forces zero, otherwise loads next_bit.\n    always_ff @(posedge clk) begin\n        if (enable)\n            shift_out <= reset ? 1'b0 : next_bit;\n    end\n\nendmodule\n```"
+          }
+        ]
+      }
+    }
+  ],
+  "created": 1794553330,
+  "model": "claude-opus-5-5",
+  "object": "chat.completion",
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 413,
+    "completion_tokens": 568,
+    "total_tokens": 981,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 184,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0
+    },
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    }
+  },
+  "service_tier": null,
+  "provider": "vertex-ai"
+}

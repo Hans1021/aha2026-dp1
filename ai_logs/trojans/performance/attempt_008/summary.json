@@ -1,0 +1,9 @@
+{
+  "variant": "performance",
+  "model": "@vertexai/gemini-3.1-pro-preview",
+  "candidate": "rtl/trojans/performance/attempt_008.sv",
+  "compiled": true,
+  "normal_verification": "Pending Bao",
+  "trigger_verification": "Pending Bao",
+  "timestamp_utc": "2026-11-13T09:32:17.417655+00:00"
+}

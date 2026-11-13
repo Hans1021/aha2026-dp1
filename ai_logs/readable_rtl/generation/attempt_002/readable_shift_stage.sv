@@ -1,0 +1,27 @@
+module readable_shift_stage (
+    input  wire clk,
+    input  wire cs_n,
+    input  wire shift_in,
+    input  wire load_data,
+    input  wire enable,
+    input  wire reset,
+    output reg  shift_out
+);
+
+    // Power-up initialization (matches original n917 = 0)
+    initial shift_out = 1'b0;
+
+    // Next-state data (original LUT n2535):
+    //   cs_n low  -> pass shift_in
+    //   cs_n high -> inverted load_data
+    wire next_data = cs_n ? ~load_data : shift_in;
+
+    // Clock-enabled register with synchronous reset.
+    // Reset only takes effect when enable is high; when enable is low the
+    // register holds its value.
+    always @(posedge clk) begin
+        if (enable)
+            shift_out <= reset ? 1'b0 : next_data;
+    end
+
+endmodule

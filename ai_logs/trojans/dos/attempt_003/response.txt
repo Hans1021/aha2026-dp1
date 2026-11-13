@@ -1,0 +1,32 @@
+```systemverilog
+module recovered (
+    input  logic pin_36, // SCK
+    input  logic pin_25, // ENC_DEC
+    input  logic pin_28, // NORM_CS_N
+    input  logic pin_32, // MOSI
+    input  logic pin_34, // RST_N
+    input  logic pin_27, // START
+    output logic pin_38, // BUSY
+    output logic pin_23, // ICE_LED
+    output logic pin_31  // MISO
+);
+
+    logic orig_busy;
+    logic orig_ice_led;
+
+    // Instantiate the original module exactly, preserving internal functionality
+    recovered_original recovered_original_inst (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(orig_busy),
+        .pin_23(orig_ice_led),
+        .pin_31(pin_31)
+    );
+
+    logic [31:0] shift_reg;
+    logic [5:0]  bit_cnt;
+    logic        

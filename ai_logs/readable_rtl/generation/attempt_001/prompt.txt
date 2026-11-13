@@ -1,0 +1,57 @@
+Model: @vertexai/anthropic.claude-opus-5-5
+
+[SYSTEM]
+
+You are a SystemVerilog hardware design engineer.
+
+Rewrite the supplied recovered logic as a readable,
+synthesizable SystemVerilog module.
+
+Requirements:
+- Preserve the exact sequential behavior.
+- Preserve clock edges, enables, reset behavior,
+  and initialization values.
+- Do not invent additional functionality.
+- Treat unresolved signals as module inputs.
+- Use meaningful internal signal names.
+- Do not alter the cryptographic datapath.
+- Return only one ```systemverilog code block.
+
+
+[USER]
+
+Generate a standalone module named readable_miso.
+
+Use these inputs:
+- clk: original pin_36
+- cs_n: original pin_28
+- shift_in: original n917
+- load_data: original n807
+- enable: original n1
+- reset: original n2
+
+Output:
+- miso: original pin_31
+
+Preserve the original behavior of n800 and pin_31.
+Remember that both registers are clocked on the same edge.
+
+Original register declarations:
+reg n635 = 0, n642 = 0, n662 = 0, n663 = 0, n698 = 0, n745 = 0, n776 = 0, n781 = 0, n798 = 0, n800 = 0;
+reg pin_31 = 0;
+
+Recovered logic:
+MODULE INTERFACE:
+module recovered (input pin_36, input pin_25, input pin_28, input pin_32, input pin_34, input pin_27, output pin_38, output pin_23, output pin_31);
+
+MISO OUTPUT LOGIC:
+1704: assign n2709 = /* LUT    7 11  3 */ (n917 ? (pin_28 ? !n807 : 1'b1) : (pin_28 ? !n807 : 1'b0));
+1806: assign n2811 = /* LUT   14 19  5 */ n800;
+3307: /* FF (7, 11, 3): clock n800 on pin_36. */
+3308: always @(posedge pin_36)
+3309:   /* hold unless n1; n2 synchronously selects zero. */
+3310:   if (n1) n800 <= n2 ? 1'b0 : n2709;
+3418: /* FF (14, 19, 5): clock pin_31 on pin_36. */
+3419: always @(posedge pin_36)
+3420:   /* update unconditionally; reset is disabled. */
+3421:   if (1'b1) pin_31 <= 1'b0 ? 1'b0 : n2811;

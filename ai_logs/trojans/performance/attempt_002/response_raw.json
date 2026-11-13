@@ -1,0 +1,45 @@
+{
+  "id": "chatcmpl-qjNktkzLt0D8GErTnKDxFCW8I8OvF",
+  "choices": [
+    {
+      "finish_reason": "MAX_TOKENS",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "```systemverilog\nmodule recovered (\n    input  logic pin_36, // SCK\n    input  logic pin_25, // ENC_DEC\n    input  logic pin_28, // NORM_CS_N\n    input  logic pin_32, // MOSI\n    input  logic pin_34, // RST_N\n    input  logic pin_27, // START\n    output logic pin_38, // BUSY\n    output logic pin_23, // ICE_LED\n    output logic pin_31  // MISO\n);\n\n    // Internal signals to monitor original module's outputs\n    logic orig_busy;\n    logic orig_ice_led;\n    logic orig_miso;\n\n    // Instantiate the original, unmodified core\n    recovered_original core_inst (\n        .pin_36(pin_36),\n        .pin_25(pin_25),\n        .pin_28(pin_28),\n        .pin_32(pin_32),\n        .pin_34(pin_34),\n        .pin_27(pin_27),\n        .pin_38(orig_busy),\n        .pin_23(orig_ice_led),\n        .pin_31(orig_miso)\n    );\n\n    // Pass-through untriggered outputs seamlessly\n    ",
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": null,
+        "refusal": null,
+        "audio": null,
+        "content_blocks": [
+          {
+            "type": "text",
+            "text": "```systemverilog\nmodule recovered (\n    input  logic pin_36, // SCK\n    input  logic pin_25, // ENC_DEC\n    input  logic pin_28, // NORM_CS_N\n    input  logic pin_32, // MOSI\n    input  logic pin_34, // RST_N\n    input  logic pin_27, // START\n    output logic pin_38, // BUSY\n    output logic pin_23, // ICE_LED\n    output logic pin_31  // MISO\n);\n\n    // Internal signals to monitor original module's outputs\n    logic orig_busy;\n    logic orig_ice_led;\n    logic orig_miso;\n\n    // Instantiate the original, unmodified core\n    recovered_original core_inst (\n        .pin_36(pin_36),\n        .pin_25(pin_25),\n        .pin_28(pin_28),\n        .pin_32(pin_32),\n        .pin_34(pin_34),\n        .pin_27(pin_27),\n        .pin_38(orig_busy),\n        .pin_23(orig_ice_led),\n        .pin_31(orig_miso)\n    );\n\n    // Pass-through untriggered outputs seamlessly\n    "
+          }
+        ]
+      }
+    }
+  ],
+  "created": 1794560881,
+  "model": "gemini-3.1-pro-preview",
+  "object": "chat.completion",
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 1154,
+    "completion_tokens": 8024,
+    "total_tokens": 9178,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 7706,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0
+    }
+  },
+  "service_tier": "standard",
+  "provider": "vertex-ai"
+}

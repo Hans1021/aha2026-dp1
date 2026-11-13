@@ -1,0 +1,54 @@
+{
+  "id": "msg_vrtx_011CgzV5VYuUaGYuTXSTwXu2",
+  "choices": [
+    {
+      "finish_reason": "end_turn",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "```systemverilog\nmodule readable_miso (\n    input  logic clk,        // original pin_36\n    input  logic cs_n,       // original pin_28\n    input  logic shift_in,   // original n917\n    input  logic load_data,  // original n807\n    input  logic enable,     // original n1\n    input  logic reset,      // original n2\n    output logic miso        // original pin_31\n);\n\n    // Internal shift bit (original n800)\n    logic miso_shift_bit = 1'b0;\n\n    // Output register (original pin_31)\n    logic miso_reg = 1'b0;\n\n    // Next-state logic for the shift bit (original n2709):\n    //   cs_n high -> inverted load_data\n    //   cs_n low  -> shift_in\n    logic miso_shift_next;\n    assign miso_shift_next = cs_n ? ~load_data : shift_in;\n\n    // Shift bit register: hold unless enabled; synchronous reset to zero\n    always_ff @(posedge clk) begin\n        if (enable) begin\n            if (reset)\n                miso_shift_bit <= 1'b0;\n            else\n                miso_shift_bit <= miso_shift_next;\n        end\n    end\n\n    // Output register: updates every clock, no reset\n    always_ff @(posedge clk) begin\n        miso_reg <= miso_shift_bit;\n    end\n\n    assign miso = miso_reg;\n\nendmodule\n```",
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": null,
+        "refusal": null,
+        "audio": null,
+        "content_blocks": [
+          {
+            "type": "thinking",
+            "thinking": "",
+            "signature": "CAQStgUKEggTEAIYAjgBQgh0aGlua2luZxIMt4ym7JUnSncGxBiiGgwLiTHhzV0OC8dzYH8iMOgBZnuCp4ENhTWvJbOj/bFUa/umfEydt+A0r+dE13kmmFE44wNFPgQc5JEV/n4paSrRBGzl5hu30BYwqKMYTVrPNuqqiH1MZDPMa6KQza/UkBrhdFx68NGROXtEtl/Na1y6Ny23C5T76OAgrzSsU4s60q5gQbOFgcC81IcDb6NtL6Ac7S/3J33Gs02rBum96pZSTqozLLqopJuuuhf9vadK7M20vScBQlwFFXvWpQVm5pGSl2BlItaqq3l5Oxo98FFN4lQz3ZiCQW2fGbkKcxBM/R+RLB36kGsvrm2xt7S1wWX6GkfQljtSSKY8ddTY4ORi2u+lFW/xGtfg3NxO3NTvIQvITV3A/6Cy4Ox6mlQIbvIAluHkZVYO3TQiYl2ymtEdstFJADeYlH5G1arUyapkelgErJ/2H3ZE8Kh5UAk/HyCCaXCIt2OYDcFnWEPO8Evs1qvvGafIySZasoq6Wb2qdud7tyxyX3lxSJtoCdOzZot7elfKy4qzpBqmZ9x9XgODQlRsqHlS8wdoz0YcgeEsPJ0qIHrv/KlY8YH6nkba0mSWTohCpjBZXxesoZH0oVw9aMiFSDAWVj3Uoj5Hb87NfbUnzSXW7GYoS/UaszT3VxfheG1svhnqFpgmA0S+a9aatJxr2B0S6sfKOGdZtU0PK2mqRRm80oNLrMRJao/Z690iFv5jmyzA2bjFqaNUx9ia+iCwB7i3JFs62QgmC4b9ZdcZ5TFhtlS7hJEi2j37s7H31Zdk3iWgMo0e4xBNvWwtVHN6vnzKknGRF9J+NKmUAMsZG80X4fEdqicXdYGKzwQ9AXe/BwzQ4ZC0sMP7+G8nB73D8Ax38XU40RKISYUGVXG2GAE="
+          },
+          {
+            "type": "text",
+            "text": "```systemverilog\nmodule readable_miso (\n    input  logic clk,        // original pin_36\n    input  logic cs_n,       // original pin_28\n    input  logic shift_in,   // original n917\n    input  logic load_data,  // original n807\n    input  logic enable,     // original n1\n    input  logic reset,      // original n2\n    output logic miso        // original pin_31\n);\n\n    // Internal shift bit (original n800)\n    logic miso_shift_bit = 1'b0;\n\n    // Output register (original pin_31)\n    logic miso_reg = 1'b0;\n\n    // Next-state logic for the shift bit (original n2709):\n    //   cs_n high -> inverted load_data\n    //   cs_n low  -> shift_in\n    logic miso_shift_next;\n    assign miso_shift_next = cs_n ? ~load_data : shift_in;\n\n    // Shift bit register: hold unless enabled; synchronous reset to zero\n    always_ff @(posedge clk) begin\n        if (enable) begin\n            if (reset)\n                miso_shift_bit <= 1'b0;\n            else\n                miso_shift_bit <= miso_shift_next;\n        end\n    end\n\n    // Output register: updates every clock, no reset\n    always_ff @(posedge clk) begin\n        miso_reg <= miso_shift_bit;\n    end\n\n    assign miso = miso_reg;\n\nendmodule\n```"
+          }
+        ]
+      }
+    }
+  ],
+  "created": 1794552722,
+  "model": "claude-opus-5-5",
+  "object": "chat.completion",
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 817,
+    "completion_tokens": 604,
+    "total_tokens": 1421,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 142,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0
+    },
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    }
+  },
+  "service_tier": null,
+  "provider": "vertex-ai"
+}

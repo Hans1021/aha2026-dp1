@@ -1,0 +1,199 @@
+SHIFT ORDER: n628 -> n390 -> n619 -> n384 -> n610 -> n607 -> n609 -> n601 -> n587 -> n578 -> n579 -> n577 -> n698 -> n781 -> n776 -> n897 -> n898 -> n1015 -> n1024 -> n998 -> n1034 -> n907 -> n1039 -> n1038 -> n910 -> n921 -> n915 -> n810 -> n814 -> n798 -> n917 -> n800 -> pin_31
+
+REGISTER n628, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n628 <= n2 ? 1'b0 : n2169;
+
+REGISTER n390, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n390 <= n2 ? 1'b0 : n2348;
+
+REGISTER n619, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n619 <= n2 ? 1'b0 : n2274;
+
+REGISTER n384, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n384 <= n2 ? 1'b0 : n2426;
+
+REGISTER n610, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n610 <= n2 ? 1'b0 : n2270;
+
+REGISTER n607, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n607 <= n2 ? 1'b0 : n1453;
+
+REGISTER n609, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n609 <= n2 ? 1'b0 : n2094;
+
+REGISTER n601, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n601 <= n2 ? 1'b0 : n2531;
+
+REGISTER n587, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n587 <= n2 ? 1'b0 : n1856;
+
+REGISTER n578, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n578 <= n2 ? 1'b0 : n2280;
+
+REGISTER n579, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n579 <= n2 ? 1'b0 : n2143;
+
+REGISTER n577, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n577 <= n2 ? 1'b0 : n1962;
+
+REGISTER n698, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n698 <= n2 ? 1'b0 : n2478;
+
+REGISTER n781, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n781 <= n2 ? 1'b0 : n2357;
+
+REGISTER n776, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n776 <= n2 ? 1'b0 : n1676;
+
+REGISTER n897, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n897 <= n2 ? 1'b0 : n2706;
+
+REGISTER n898, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n898 <= n2 ? 1'b0 : n1639;
+
+REGISTER n1015, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1015 <= n2 ? 1'b0 : n2408;
+
+REGISTER n1024, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1024 <= n2 ? 1'b0 : n1469;
+
+REGISTER n998, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n998 <= n2 ? 1'b0 : n1515;
+
+REGISTER n1034, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1034 <= n2 ? 1'b0 : n2723;
+
+REGISTER n907, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n907 <= n2 ? 1'b0 : n1707;
+
+REGISTER n1039, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1039 <= n2 ? 1'b0 : n1969;
+
+REGISTER n1038, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n1038 <= n2 ? 1'b0 : n1787;
+
+REGISTER n910, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n910 <= n2 ? 1'b0 : n2567;
+
+REGISTER n921, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n921 <= n2 ? 1'b0 : n2822;
+
+REGISTER n915, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n915 <= n2 ? 1'b0 : n2172;
+
+REGISTER n810, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n810 <= n2 ? 1'b0 : n2500;
+
+REGISTER n814, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n814 <= n2 ? 1'b0 : n2104;
+
+REGISTER n798, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n798 <= n2 ? 1'b0 : n2207;
+
+REGISTER n917, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n917 <= n2 ? 1'b0 : n2535;
+
+REGISTER n800, initial=0
+always @(posedge pin_36)
+  /* hold unless n1; n2 synchronously selects zero. */
+  if (n1) n800 <= n2 ? 1'b0 : n2709;
+
+REGISTER pin_31, initial=0
+always @(posedge pin_36)
+  /* update unconditionally; reset is disabled. */
+  if (1'b1) pin_31 <= 1'b0 ? 1'b0 : n2811;
+449: assign n1453 = /* LUT    5  9  0 */ (n608 ? (pin_28 ? 1'b0 : n610) : (pin_28 ? 1'b1 : n610));
+465: assign n1469 = /* LUT    9  8  3 */ (n1033 ? (pin_28 ? 1'b0 : n1015) : (pin_28 ? 1'b1 : n1015));
+511: assign n1515 = /* LUT    9  8  6 */ (n1024 ? (n1032 ? !pin_28 : 1'b1) : (n1032 ? 1'b0 : pin_28));
+635: assign n1639 = /* LUT    8  7  3 */ (n1026 ? (pin_28 ? 1'b0 : n897) : (pin_28 ? 1'b1 : n897));
+672: assign n1676 = /* LUT    7  7  1 */ (n781 ? (n779 ? !pin_28 : 1'b1) : (n779 ? 1'b0 : pin_28));
+703: assign n1707 = /* LUT    8  9  5 */ (n905 ? (n1034 ? !pin_28 : 1'b0) : (n1034 ? 1'b1 : pin_28));
+783: assign n1787 = /* LUT    9  9  0 */ (n1039 ? (pin_28 ? !n1041 : 1'b1) : (pin_28 ? !n1041 : 1'b0));
+852: assign n1856 = /* LUT    7  8  4 */ (n601 ? (n785 ? !pin_28 : 1'b1) : (n785 ? 1'b0 : pin_28));
+958: assign n1962 = /* LUT    7  5  3 */ (pin_28 ? !n755 : n579);
+965: assign n1969 = /* LUT    9  9  2 */ (pin_28 ? !n1040 : n907);
+1090: assign n2094 = /* LUT    5  9  2 */ (pin_28 ? !n611 : n607);
+1100: assign n2104 = /* LUT    7 13  6 */ (n813 ? (pin_28 ? 1'b0 : n810) : (pin_28 ? 1'b1 : n810));
+1139: assign n2143 = /* LUT    7  5  5 */ (n763 ? (n578 ? !pin_28 : 1'b0) : (n578 ? 1'b1 : pin_28));
+1165: assign n2169 = /* LUT    5 11  4 */ (n630 ? (pin_28 ? 1'b0 : pin_32) : (pin_28 ? 1'b1 : pin_32));
+1168: assign n2172 = /* LUT    8 11  2 */ (n914 ? (n921 ? !pin_28 : 1'b0) : (n921 ? 1'b1 : pin_28));
+1203: assign n2207 = /* LUT    7 11  0 */ (pin_28 ? !n802 : n814);
+1266: assign n2270 = /* LUT    5  9  4 */ (n384 ? (n599 ? !pin_28 : 1'b1) : (n599 ? 1'b0 : pin_28));
+1270: assign n2274 = /* LUT    5 10  5 */ (n390 ? (pin_28 ? !n615 : 1'b1) : (pin_28 ? !n615 : 1'b0));
+1276: assign n2280 = /* LUT    7  5  4 */ (n762 ? (pin_28 ? 1'b0 : n587) : (pin_28 ? 1'b1 : n587));
+1343: assign n2348 = /* LUT    5 11  6 */ (pin_28 ? !n624 : n628);
+1352: assign n2357 = /* LUT    7  7  6 */ (n778 ? (n698 ? !pin_28 : 1'b0) : (n698 ? 1'b1 : pin_28));
+1403: assign n2408 = /* LUT    9  7  2 */ (pin_28 ? !n1027 : n898);
+1421: assign n2426 = /* LUT    5 10  4 */ (n618 ? (pin_28 ? 1'b0 : n619) : (pin_28 ? 1'b1 : n619));
+1473: assign n2478 = /* LUT    7  6  7 */ (pin_28 ? !n775 : n577);
+1495: assign n2500 = /* LUT    7 13  0 */ (n915 ? (pin_28 ? !n812 : 1'b1) : (pin_28 ? !n812 : 1'b0));
+1526: assign n2531 = /* LUT    5  8  3 */ (pin_28 ? !n602 : n609);
+1530: assign n2535 = /* LUT    8 11  6 */ (n916 ? (pin_28 ? 1'b0 : n798) : (pin_28 ? 1'b1 : n798));
+1562: assign n2567 = /* LUT    8 10  0 */ (n911 ? (pin_28 ? 1'b0 : n1038) : (pin_28 ? 1'b1 : n1038));
+1701: assign n2706 = /* LUT    8  7  2 */ (pin_28 ? !n896 : n776);
+1704: assign n2709 = /* LUT    7 11  3 */ (n917 ? (pin_28 ? !n807 : 1'b1) : (pin_28 ? !n807 : 1'b0));
+1718: assign n2723 = /* LUT    9  8  4 */ (pin_28 ? !n1035 : n998);
+1806: assign n2811 = /* LUT   14 19  5 */ n800;
+1817: assign n2822 = /* LUT    8 12  4 */ (pin_28 ? !n923 : n910);

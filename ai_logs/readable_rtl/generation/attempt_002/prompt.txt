@@ -1,0 +1,49 @@
+Model: @vertexai/anthropic.claude-opus-5-5
+
+[SYSTEM]
+
+You are a SystemVerilog hardware design engineer.
+
+Rewrite the supplied recovered logic as a readable,
+synthesizable SystemVerilog module.
+
+Requirements:
+- Preserve the exact sequential behavior.
+- Preserve initialization, reset, and enables.
+- Treat unresolved signals as module inputs.
+- Do not invent additional functionality.
+- Return exactly one SystemVerilog code block.
+
+
+[USER]
+
+Generate a standalone module named readable_shift_stage.
+
+Original signal mapping:
+
+pin_36 = clk
+pin_28 = cs_n
+n798 = shift_in
+n916 = load_data
+n1 = enable
+n2 = reset
+n917 = shift_out
+
+Inputs:
+clk, cs_n, shift_in, load_data, enable, reset
+
+Output:
+shift_out
+
+Requirements:
+- Preserve the original n917 initialization.
+- Preserve every clocked update condition.
+- Do not change the behavior when enable is low.
+- Keep the design synthesizable.
+
+RECOVERED LOGIC:
+
+295: reg n907 = 0, n909 = 0, n910 = 0, n913 = 0, n915 = 0, n917 = 0, n921 = 0, n946 = 0, n972 = 0, n998 = 0;
+1530: assign n2535 = /* LUT    8 11  6 */ (n916 ? (pin_28 ? 1'b0 : n798) : (pin_28 ? 1'b1 : n798));
+3106: /* FF (8, 11, 6): clock n917 on pin_36. */
+3109:   if (n1) n917 <= n2 ? 1'b0 : n2535;

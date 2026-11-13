@@ -1,0 +1,172 @@
+REGISTER ORDER (MOSI TO MISO):
+n628 -> n390 -> n619 -> n384 -> n610 -> n607 -> n609 -> n601 -> n587 -> n578 -> n579 -> n577 -> n698 -> n781 -> n776 -> n897 -> n898 -> n1015 -> n1024 -> n998 -> n1034 -> n907 -> n1039 -> n1038 -> n910 -> n921 -> n915 -> n810 -> n814 -> n798 -> n917 -> n800 -> pin_31
+
+INITIAL VALUES:
+{'n628': 0, 'n390': 0, 'n619': 0, 'n384': 0, 'n610': 0, 'n607': 0, 'n609': 0, 'n601': 0, 'n587': 0, 'n578': 0, 'n579': 0, 'n577': 0, 'n698': 0, 'n781': 0, 'n776': 0, 'n897': 0, 'n898': 0, 'n1015': 0, 'n1024': 0, 'n998': 0, 'n1034': 0, 'n907': 0, 'n1039': 0, 'n1038': 0, 'n910': 0, 'n921': 0, 'n915': 0, 'n810': 0, 'n814': 0, 'n798': 0, 'n917': 0, 'n800': 0, 'pin_31': 0}
+
+ORIGINAL SOURCE STATEMENTS:
+449: assign n1453 = /* LUT    5  9  0 */ (n608 ? (pin_28 ? 1'b0 : n610) : (pin_28 ? 1'b1 : n610));
+465: assign n1469 = /* LUT    9  8  3 */ (n1033 ? (pin_28 ? 1'b0 : n1015) : (pin_28 ? 1'b1 : n1015));
+511: assign n1515 = /* LUT    9  8  6 */ (n1024 ? (n1032 ? !pin_28 : 1'b1) : (n1032 ? 1'b0 : pin_28));
+635: assign n1639 = /* LUT    8  7  3 */ (n1026 ? (pin_28 ? 1'b0 : n897) : (pin_28 ? 1'b1 : n897));
+672: assign n1676 = /* LUT    7  7  1 */ (n781 ? (n779 ? !pin_28 : 1'b1) : (n779 ? 1'b0 : pin_28));
+703: assign n1707 = /* LUT    8  9  5 */ (n905 ? (n1034 ? !pin_28 : 1'b0) : (n1034 ? 1'b1 : pin_28));
+783: assign n1787 = /* LUT    9  9  0 */ (n1039 ? (pin_28 ? !n1041 : 1'b1) : (pin_28 ? !n1041 : 1'b0));
+852: assign n1856 = /* LUT    7  8  4 */ (n601 ? (n785 ? !pin_28 : 1'b1) : (n785 ? 1'b0 : pin_28));
+958: assign n1962 = /* LUT    7  5  3 */ (pin_28 ? !n755 : n579);
+965: assign n1969 = /* LUT    9  9  2 */ (pin_28 ? !n1040 : n907);
+1090: assign n2094 = /* LUT    5  9  2 */ (pin_28 ? !n611 : n607);
+1100: assign n2104 = /* LUT    7 13  6 */ (n813 ? (pin_28 ? 1'b0 : n810) : (pin_28 ? 1'b1 : n810));
+1139: assign n2143 = /* LUT    7  5  5 */ (n763 ? (n578 ? !pin_28 : 1'b0) : (n578 ? 1'b1 : pin_28));
+1165: assign n2169 = /* LUT    5 11  4 */ (n630 ? (pin_28 ? 1'b0 : pin_32) : (pin_28 ? 1'b1 : pin_32));
+1168: assign n2172 = /* LUT    8 11  2 */ (n914 ? (n921 ? !pin_28 : 1'b0) : (n921 ? 1'b1 : pin_28));
+1203: assign n2207 = /* LUT    7 11  0 */ (pin_28 ? !n802 : n814);
+1266: assign n2270 = /* LUT    5  9  4 */ (n384 ? (n599 ? !pin_28 : 1'b1) : (n599 ? 1'b0 : pin_28));
+1270: assign n2274 = /* LUT    5 10  5 */ (n390 ? (pin_28 ? !n615 : 1'b1) : (pin_28 ? !n615 : 1'b0));
+1276: assign n2280 = /* LUT    7  5  4 */ (n762 ? (pin_28 ? 1'b0 : n587) : (pin_28 ? 1'b1 : n587));
+1343: assign n2348 = /* LUT    5 11  6 */ (pin_28 ? !n624 : n628);
+1352: assign n2357 = /* LUT    7  7  6 */ (n778 ? (n698 ? !pin_28 : 1'b0) : (n698 ? 1'b1 : pin_28));
+1403: assign n2408 = /* LUT    9  7  2 */ (pin_28 ? !n1027 : n898);
+1421: assign n2426 = /* LUT    5 10  4 */ (n618 ? (pin_28 ? 1'b0 : n619) : (pin_28 ? 1'b1 : n619));
+1473: assign n2478 = /* LUT    7  6  7 */ (pin_28 ? !n775 : n577);
+1495: assign n2500 = /* LUT    7 13  0 */ (n915 ? (pin_28 ? !n812 : 1'b1) : (pin_28 ? !n812 : 1'b0));
+1526: assign n2531 = /* LUT    5  8  3 */ (pin_28 ? !n602 : n609);
+1530: assign n2535 = /* LUT    8 11  6 */ (n916 ? (pin_28 ? 1'b0 : n798) : (pin_28 ? 1'b1 : n798));
+1562: assign n2567 = /* LUT    8 10  0 */ (n911 ? (pin_28 ? 1'b0 : n1038) : (pin_28 ? 1'b1 : n1038));
+1701: assign n2706 = /* LUT    8  7  2 */ (pin_28 ? !n896 : n776);
+1704: assign n2709 = /* LUT    7 11  3 */ (n917 ? (pin_28 ? !n807 : 1'b1) : (pin_28 ? !n807 : 1'b0));
+1718: assign n2723 = /* LUT    9  8  4 */ (pin_28 ? !n1035 : n998);
+1806: assign n2811 = /* LUT   14 19  5 */ n800;
+1817: assign n2822 = /* LUT    8 12  4 */ (pin_28 ? !n923 : n910);
+1853: /* FF (5, 9, 0): clock n607 on pin_36. */
+1854: always @(posedge pin_36)
+1855:   /* hold unless n1; n2 synchronously selects zero. */
+1856:   if (n1) n607 <= n2 ? 1'b0 : n1453;
+1875: /* FF (9, 8, 3): clock n1024 on pin_36. */
+1876: always @(posedge pin_36)
+1877:   /* hold unless n1; n2 synchronously selects zero. */
+1878:   if (n1) n1024 <= n2 ? 1'b0 : n1469;
+1924: /* FF (9, 8, 6): clock n998 on pin_36. */
+1925: always @(posedge pin_36)
+1926:   /* hold unless n1; n2 synchronously selects zero. */
+1927:   if (n1) n998 <= n2 ? 1'b0 : n1515;
+2069: /* FF (8, 7, 3): clock n898 on pin_36. */
+2070: always @(posedge pin_36)
+2071:   /* hold unless n1; n2 synchronously selects zero. */
+2072:   if (n1) n898 <= n2 ? 1'b0 : n1639;
+2109: /* FF (7, 7, 1): clock n776 on pin_36. */
+2110: always @(posedge pin_36)
+2111:   /* hold unless n1; n2 synchronously selects zero. */
+2112:   if (n1) n776 <= n2 ? 1'b0 : n1676;
+2143: /* FF (8, 9, 5): clock n907 on pin_36. */
+2144: always @(posedge pin_36)
+2145:   /* hold unless n1; n2 synchronously selects zero. */
+2146:   if (n1) n907 <= n2 ? 1'b0 : n1707;
+2232: /* FF (9, 9, 0): clock n1038 on pin_36. */
+2233: always @(posedge pin_36)
+2234:   /* hold unless n1; n2 synchronously selects zero. */
+2235:   if (n1) n1038 <= n2 ? 1'b0 : n1787;
+2313: /* FF (7, 8, 4): clock n587 on pin_36. */
+2314: always @(posedge pin_36)
+2315:   /* hold unless n1; n2 synchronously selects zero. */
+2316:   if (n1) n587 <= n2 ? 1'b0 : n1856;
+2425: /* FF (7, 5, 3): clock n577 on pin_36. */
+2426: always @(posedge pin_36)
+2427:   /* hold unless n1; n2 synchronously selects zero. */
+2428:   if (n1) n577 <= n2 ? 1'b0 : n1962;
+2435: /* FF (9, 9, 2): clock n1039 on pin_36. */
+2436: always @(posedge pin_36)
+2437:   /* hold unless n1; n2 synchronously selects zero. */
+2438:   if (n1) n1039 <= n2 ? 1'b0 : n1969;
+2569: /* FF (5, 9, 2): clock n609 on pin_36. */
+2570: always @(posedge pin_36)
+2571:   /* hold unless n1; n2 synchronously selects zero. */
+2572:   if (n1) n609 <= n2 ? 1'b0 : n2094;
+2582: /* FF (7, 13, 6): clock n814 on pin_36. */
+2583: always @(posedge pin_36)
+2584:   /* hold unless n1; n2 synchronously selects zero. */
+2585:   if (n1) n814 <= n2 ? 1'b0 : n2104;
+2627: /* FF (7, 5, 5): clock n579 on pin_36. */
+2628: always @(posedge pin_36)
+2629:   /* hold unless n1; n2 synchronously selects zero. */
+2630:   if (n1) n579 <= n2 ? 1'b0 : n2143;
+2656: /* FF (5, 11, 4): clock n628 on pin_36. */
+2657: always @(posedge pin_36)
+2658:   /* hold unless n1; n2 synchronously selects zero. */
+2659:   if (n1) n628 <= n2 ? 1'b0 : n2169;
+2665: /* FF (8, 11, 2): clock n915 on pin_36. */
+2666: always @(posedge pin_36)
+2667:   /* hold unless n1; n2 synchronously selects zero. */
+2668:   if (n1) n915 <= n2 ? 1'b0 : n2172;
+2703: /* FF (7, 11, 0): clock n798 on pin_36. */
+2704: always @(posedge pin_36)
+2705:   /* hold unless n1; n2 synchronously selects zero. */
+2706:   if (n1) n798 <= n2 ? 1'b0 : n2207;
+2775: /* FF (5, 9, 4): clock n610 on pin_36. */
+2776: always @(posedge pin_36)
+2777:   /* hold unless n1; n2 synchronously selects zero. */
+2778:   if (n1) n610 <= n2 ? 1'b0 : n2270;
+2782: /* FF (5, 10, 5): clock n619 on pin_36. */
+2783: always @(posedge pin_36)
+2784:   /* hold unless n1; n2 synchronously selects zero. */
+2785:   if (n1) n619 <= n2 ? 1'b0 : n2274;
+2791: /* FF (7, 5, 4): clock n578 on pin_36. */
+2792: always @(posedge pin_36)
+2793:   /* hold unless n1; n2 synchronously selects zero. */
+2794:   if (n1) n578 <= n2 ? 1'b0 : n2280;
+2877: /* FF (5, 11, 6): clock n390 on pin_36. */
+2878: always @(posedge pin_36)
+2879:   /* hold unless n1; n2 synchronously selects zero. */
+2880:   if (n1) n390 <= n2 ? 1'b0 : n2348;
+2889: /* FF (7, 7, 6): clock n781 on pin_36. */
+2890: always @(posedge pin_36)
+2891:   /* hold unless n1; n2 synchronously selects zero. */
+2892:   if (n1) n781 <= n2 ? 1'b0 : n2357;
+2946: /* FF (9, 7, 2): clock n1015 on pin_36. */
+2947: always @(posedge pin_36)
+2948:   /* hold unless n1; n2 synchronously selects zero. */
+2949:   if (n1) n1015 <= n2 ? 1'b0 : n2408;
+2970: /* FF (5, 10, 4): clock n384 on pin_36. */
+2971: always @(posedge pin_36)
+2972:   /* hold unless n1; n2 synchronously selects zero. */
+2973:   if (n1) n384 <= n2 ? 1'b0 : n2426;
+3028: /* FF (7, 6, 7): clock n698 on pin_36. */
+3029: always @(posedge pin_36)
+3030:   /* hold unless n1; n2 synchronously selects zero. */
+3031:   if (n1) n698 <= n2 ? 1'b0 : n2478;
+3056: /* FF (7, 13, 0): clock n810 on pin_36. */
+3057: always @(posedge pin_36)
+3058:   /* hold unless n1; n2 synchronously selects zero. */
+3059:   if (n1) n810 <= n2 ? 1'b0 : n2500;
+3099: /* FF (5, 8, 3): clock n601 on pin_36. */
+3100: always @(posedge pin_36)
+3101:   /* hold unless n1; n2 synchronously selects zero. */
+3102:   if (n1) n601 <= n2 ? 1'b0 : n2531;
+3106: /* FF (8, 11, 6): clock n917 on pin_36. */
+3107: always @(posedge pin_36)
+3108:   /* hold unless n1; n2 synchronously selects zero. */
+3109:   if (n1) n917 <= n2 ? 1'b0 : n2535;
+3141: /* FF (8, 10, 0): clock n910 on pin_36. */
+3142: always @(posedge pin_36)
+3143:   /* hold unless n1; n2 synchronously selects zero. */
+3144:   if (n1) n910 <= n2 ? 1'b0 : n2567;
+3301: /* FF (8, 7, 2): clock n897 on pin_36. */
+3302: always @(posedge pin_36)
+3303:   /* hold unless n1; n2 synchronously selects zero. */
+3304:   if (n1) n897 <= n2 ? 1'b0 : n2706;
+3307: /* FF (7, 11, 3): clock n800 on pin_36. */
+3308: always @(posedge pin_36)
+3309:   /* hold unless n1; n2 synchronously selects zero. */
+3310:   if (n1) n800 <= n2 ? 1'b0 : n2709;
+3324: /* FF (9, 8, 4): clock n1034 on pin_36. */
+3325: always @(posedge pin_36)
+3326:   /* hold unless n1; n2 synchronously selects zero. */
+3327:   if (n1) n1034 <= n2 ? 1'b0 : n2723;
+3418: /* FF (14, 19, 5): clock pin_31 on pin_36. */
+3419: always @(posedge pin_36)
+3420:   /* update unconditionally; reset is disabled. */
+3421:   if (1'b1) pin_31 <= 1'b0 ? 1'b0 : n2811;
+3432: /* FF (8, 12, 4): clock n921 on pin_36. */
+3433: always @(posedge pin_36)
+3434:   /* hold unless n1; n2 synchronously selects zero. */
+3435:   if (n1) n921 <= n2 ? 1'b0 : n2822;

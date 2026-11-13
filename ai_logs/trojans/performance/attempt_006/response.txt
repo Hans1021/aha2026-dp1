@@ -1,0 +1,112 @@
+```systemverilog
+/* 
+ * LIMITATION EXPLANATION:
+ * This revision addresses the feedback requirements while strictly adhering to FPGA 
+ * synchronous design rules (no unsafe CDC, no inferred latches, no unsupported clocks).
+ * 
+ * 1. "Reliably count START events, including when START pulses while SCK is not toggling":
+ *    IMPOSSIBLE synchronously. Updating a counter requires a clock edge. If SCK is stopped, 
+ *    a START pulse cannot trigger a state transition. Clocking a state element directly 
+ *    with START would create an unsupported clock domain and unsafe CDC, while asynchronous 
+ *    loops infer forbidden latches. (Note: The original specification explicitly defines 
+ *    the trigger as "sampled on a rising SCK edge", which inherently requires SCK edges).
+ * 
+ * 2. "Detect original BUSY completion without requiring an SCK edge" and "Ensure there 
+ *    is no momentary LOW glitch":
+ *    ACHIEVED. The design uses combinational fall-through logic (!orig_busy && orig_busy_d) 
+ *    to detect the falling edge asynchronously. If orig_busy falls while SCK is stopped, 
+ *    the external BUSY is immediately held HIGH combinationally. When SCK resumes, it 
+ *    smoothly hands off to the synchronous `extend_active` counter, preventing any 
+ *    cycle-long LOW glitch.
+ * 
+ * 3. "Keep externally visible BUSY asserted for exactly eight subsequent SCK cycles":
+ *    ACHIEVED. The combinational extension covers the detection cycle, and the synchronous 
+ *    counter runs for exactly 8 full SCK cycles (extend_cnt from 7 down to 0).
+ */
+
+module recovered (
+    input  logic pin_36, // SCK
+    input  logic pin_25, // ENC_DEC
+    input  logic pin_28, // NORM_CS_N
+    input  logic pin_32, // MOSI
+    input  logic pin_34, // RST_N
+    input  logic pin_27, // START
+    output logic pin_38, // BUSY
+    output logic pin_23, // ICE_LED
+    output logic pin_31  // MISO
+);
+
+    // Internal signals to monitor original module's outputs
+    logic orig_busy;
+    logic orig_ice_led;
+    logic orig_miso;
+
+    // Instantiate the original, unmodified core
+    recovered_original core_inst (
+        .pin_36(pin_36),
+        .pin_25(pin_25),
+        .pin_28(pin_28),
+        .pin_32(pin_32),
+        .pin_34(pin_34),
+        .pin_27(pin_27),
+        .pin_38(orig_busy),
+        .pin_23(orig_ice_led),
+        .pin_31(orig_miso)
+    );
+
+    // State for the hardware modification trigger and payload
+    logic       start_d;
+    logic [2:0] start_cnt;
+    logic       orig_busy_d;
+    
+    logic [2:0] extend_cnt;
+    logic       extend_active;
+    logic       payload_done;
+
+    always_ff @(posedge pin_36) begin
+        if (!pin_34) begin // Synchronous active-low reset
+            start_d       <= 1'b0;
+            start_cnt     <= 3'd0;
+            orig_busy_d   <= 1'b0;
+            extend_cnt    <= 3'd0;
+            extend_active <= 1'b0;
+            payload_done  <= 1'b0;
+        end else begin
+            start_d     <= pin_27;
+            orig_busy_d <= orig_busy;
+
+            // Trigger: Count START assertions sampled on rising SCK edge
+            if (pin_27 && !start_d) begin
+                if (start_cnt < 3'd7) begin
+                    start_cnt <= start_cnt + 1'b1;
+                end
+            end
+
+            // Payload: Extend externally visible BUSY by exactly 8 SCK cycles 
+            // after the 4th core completion.
+            if (start_cnt == 3'd4 && !payload_done && !extend_active && !orig_busy && orig_busy_d) begin
+                extend_active <= 1'b1;
+                extend_cnt    <= 3'd7; // Counts 8 SCK cycles (7 down to 0)
+            end else if (extend_active) begin
+                if (extend_cnt == 3'd0) begin
+                    extend_active <= 1'b0;
+                    payload_done  <= 1'b1; // Mark payload as done to prevent reactivation
+                end else begin
+                    extend_cnt <= extend_cnt - 1'b1;
+                end
+            end
+        end
+    end
+
+    // Combinational fall-through logic to seamlessly catch the falling edge of BUSY
+    // asynchronously and hold the external signal HIGH until the synchronous clock resumes.
+    wire extend_trigger = (start_cnt == 3'd4) && !payload_done && !extend_active && !orig_busy && orig_busy_d;
+    wire extension = extend_active | extend_trigger;
+
+    // Output routing
+    assign pin_38 = orig_busy | extension; // Extended BUSY
+    assign pin_23 = orig_ice_led;          // Untriggered outputs pass-through transparently
+    assign pin_31 = orig_miso;             // Untriggered outputs pass-through transparently
+
+endmodule
+```
